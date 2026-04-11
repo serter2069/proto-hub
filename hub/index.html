@@ -142,6 +142,22 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .story-expected { margin-top: 6px; color: #374151; } .story-expected strong { color: #111; }
 .story-tested { font-size: 11px; color: #888; margin-top: 4px; }
 .story-failure { font-size: 12px; color: #dc2626; margin-top: 4px; font-style: italic; }
+.story-edit-btn { font-size: 11px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 8px; cursor: pointer; margin-left: 8px; transition: all 0.15s; }
+.story-edit-btn:hover { background: #dbeafe; }
+.story-item.editing { background: #eff6ff; border-color: #93c5fd; }
+.story-edit-form { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.story-edit-form label { font-size: 11px; font-weight: 600; color: #374151; }
+.story-edit-form input, .story-edit-form textarea, .story-edit-form select { font-size: 12px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-family: inherit; }
+.story-edit-form input:focus, .story-edit-form textarea:focus, .story-edit-form select:focus { border-color: #2563eb; }
+.story-edit-form textarea { min-height: 60px; resize: vertical; }
+.story-edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+.story-edit-actions button { padding: 5px 14px; font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
+.story-save-btn { background: #16a34a; color: #fff; }
+.story-save-btn:hover { background: #15803d; }
+.story-save-btn:disabled { background: #86efac; cursor: wait; }
+.story-cancel-btn { background: #e5e7eb; color: #374151; }
+.story-cancel-btn:hover { background: #d1d5db; }
+.role-filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .story-empty { text-align: center; padding: 40px 20px; color: #999; font-size: 14px; }
 .manage-btn { display: inline-block; font-size: 11px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 5px; padding: 2px 8px; cursor: pointer; margin-left: 8px; transition: all 0.15s; }
 .manage-btn:hover { background: #dbeafe; }
@@ -448,12 +464,14 @@ function editChip(projectId, command, currentValue, chipEl) {
 }
 
 // --- Stories Modal ---
-var storiesState = { projectId: null, projectName: '', stories: [], filter: 'all', summary: {} };
+var storiesState = { projectId: null, projectName: '', stories: [], filter: 'all', roleFilter: 'all', editingId: null, summary: {} };
 
 function openStories(projectId, projectName) {
   storiesState.projectId = projectId;
   storiesState.projectName = projectName;
   storiesState.filter = 'all';
+  storiesState.roleFilter = 'all';
+  storiesState.editingId = null;
   document.getElementById('storiesTitle').textContent = projectName + ' \u2014 User Stories';
   document.getElementById('storiesBody').innerHTML = '<div class="story-empty pulse">Loading stories...</div>';
   document.getElementById('storiesSummary').innerHTML = '';
@@ -505,11 +523,35 @@ function renderStoriesFilters() {
     html += '<button class="filter-tab' + (storiesState.filter === t ? ' active' : '') +
       '" onclick="setStoriesFilter(\'' + t + '\')">' + t.charAt(0).toUpperCase() + t.slice(1) + '</button>';
   });
+  // Role filter
+  var roles = [];
+  storiesState.stories.forEach(function(s) {
+    var r = s.role || '---';
+    if (roles.indexOf(r) === -1) roles.push(r);
+  });
+  roles.sort();
+  if (roles.length > 0) {
+    html += '<span style="margin-left:8px;border-left:1px solid #d1d5db;padding-left:8px"></span>';
+    html += '<button class="filter-tab' + (storiesState.roleFilter === 'all' ? ' active' : '') +
+      '" onclick="setRoleFilter(\'all\')">All Roles</button>';
+    roles.forEach(function(r) {
+      html += '<button class="filter-tab' + (storiesState.roleFilter === r ? ' active' : '') +
+        '" onclick="setRoleFilter(\'' + esc(r).replace(/'/g, "\\'") + '\')">' + esc(r) + '</button>';
+    });
+  }
   document.getElementById('storiesFilters').innerHTML = html;
+}
+
+function setRoleFilter(r) {
+  storiesState.roleFilter = r;
+  storiesState.editingId = null;
+  renderStoriesFilters();
+  renderStoriesList();
 }
 
 function setStoriesFilter(f) {
   storiesState.filter = f;
+  storiesState.editingId = null;
   renderStoriesFilters();
   renderStoriesList();
 }
@@ -519,13 +561,50 @@ function renderStoriesList() {
   if (storiesState.filter !== 'all') {
     list = list.filter(function(s) { return s.status === storiesState.filter; });
   }
+  if (storiesState.roleFilter !== 'all') {
+    list = list.filter(function(s) { return (s.role || '---') === storiesState.roleFilter; });
+  }
   if (list.length === 0) {
-    document.getElementById('storiesBody').innerHTML =
-      '<div class="story-empty">' + (storiesState.stories.length === 0 ? 'No stories yet' : 'No ' + storiesState.filter + ' stories') + '</div>';
+    var msg = storiesState.stories.length === 0 ? 'No stories yet' : 'No matching stories';
+    document.getElementById('storiesBody').innerHTML = '<div class="story-empty">' + msg + '</div>';
     return;
   }
   var html = '';
   list.forEach(function(s) {
+    var isEditing = storiesState.editingId === s.id;
+
+    if (isEditing) {
+      var stepsVal = Array.isArray(s.steps) ? s.steps.join('\n') : (s.steps || '');
+      html +=
+        '<div class="story-item editing" id="story-' + s.id + '">' +
+          '<div class="story-top">' +
+            '<div><span class="story-id">#' + s.id + '</span> <span class="story-page">' + esc(s.page_id) + '</span></div>' +
+            '<span class="status-badge ' + s.status + '">' + s.status.toUpperCase() + '</span>' +
+          '</div>' +
+          '<div class="story-edit-form">' +
+            '<label>Title</label>' +
+            '<input type="text" id="edit-title-' + s.id + '" value="' + esc(s.title).replace(/"/g, '&quot;') + '">' +
+            '<label>Role</label>' +
+            '<select id="edit-role-' + s.id + '">' +
+              ['PUBLIC','CLIENT','SPECIALIST','ADMIN','USER','GUEST'].map(function(r) {
+                return '<option value="' + r + '"' + ((s.role || '') === r ? ' selected' : '') + '>' + r + '</option>';
+              }).join('') +
+            '</select>' +
+            '<label>Precondition</label>' +
+            '<textarea id="edit-precondition-' + s.id + '">' + esc(s.precondition || '') + '</textarea>' +
+            '<label>Steps (one per line)</label>' +
+            '<textarea id="edit-steps-' + s.id + '">' + esc(stepsVal) + '</textarea>' +
+            '<label>Expected</label>' +
+            '<textarea id="edit-expected-' + s.id + '">' + esc(s.expected || '') + '</textarea>' +
+            '<div class="story-edit-actions">' +
+              '<button class="story-save-btn" onclick="saveStoryEdit(' + s.id + ')">Save</button>' +
+              '<button class="story-cancel-btn" onclick="cancelStoryEdit()">Cancel</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      return;
+    }
+
     var stepsHtml = '';
     if (Array.isArray(s.steps) && s.steps.length > 0) {
       stepsHtml = '<details class="story-details"><summary>Steps & Expected</summary>' +
@@ -545,9 +624,12 @@ function renderStoriesList() {
       '<div class="story-item" id="story-' + s.id + '">' +
         '<div class="story-top">' +
           '<div><span class="story-id">#' + s.id + '</span> <span class="story-page">' + esc(s.page_id) + '</span></div>' +
-          '<span class="status-badge ' + s.status + '" onclick="toggleStatusDropdown(event,' + s.id + ')">' +
-            s.status.toUpperCase() + ' \u25BE' +
-          '</span>' +
+          '<div>' +
+            '<button class="story-edit-btn" onclick="startStoryEdit(' + s.id + ')">Edit</button>' +
+            '<span class="status-badge ' + s.status + '" onclick="toggleStatusDropdown(event,' + s.id + ')">' +
+              s.status.toUpperCase() + ' \u25BE' +
+            '</span>' +
+          '</div>' +
         '</div>' +
         '<div class="story-title">' + esc(s.title) + '</div>' +
         '<div class="story-meta"><span class="story-role">' + esc(s.role || '---') + '</span></div>' +
@@ -556,6 +638,57 @@ function renderStoriesList() {
       '</div>';
   });
   document.getElementById('storiesBody').innerHTML = html;
+}
+
+function startStoryEdit(storyId) {
+  storiesState.editingId = storyId;
+  renderStoriesList();
+}
+
+function cancelStoryEdit() {
+  storiesState.editingId = null;
+  renderStoriesList();
+}
+
+async function saveStoryEdit(storyId) {
+  var title = document.getElementById('edit-title-' + storyId).value.trim();
+  var role = document.getElementById('edit-role-' + storyId).value;
+  var precondition = document.getElementById('edit-precondition-' + storyId).value.trim();
+  var stepsRaw = document.getElementById('edit-steps-' + storyId).value.trim();
+  var expected = document.getElementById('edit-expected-' + storyId).value.trim();
+
+  if (!title) { toast('Title is required', true); return; }
+
+  var steps = stepsRaw.split('\n').filter(function(l) { return l.trim() !== ''; });
+
+  var btn = document.querySelector('.story-save-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    var res = await fetch(API + '/stories/' + storyId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, role: role, precondition: precondition, steps: steps, expected: expected })
+    });
+    if (!res.ok) { var err = await res.json(); throw new Error(err.error || 'Failed'); }
+    var updated = await res.json();
+    // Update local state
+    var idx = storiesState.stories.findIndex(function(s) { return s.id === storyId; });
+    if (idx !== -1) {
+      storiesState.stories[idx].title = updated.title;
+      storiesState.stories[idx].role = updated.role;
+      storiesState.stories[idx].precondition = updated.precondition;
+      storiesState.stories[idx].steps = updated.steps;
+      storiesState.stories[idx].expected = updated.expected;
+    }
+    storiesState.editingId = null;
+    renderStoriesFilters();
+    renderStoriesList();
+    toast('Saved');
+  } catch (e) {
+    toast('Save failed: ' + e.message, true);
+    if (btn) btn.disabled = false;
+  }
 }
 
 function esc(str) {

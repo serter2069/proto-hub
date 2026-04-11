@@ -194,6 +194,24 @@ app.get("/api/runs", async (req, res) => {
   res.json(rows);
 });
 
+app.put("/api/runs/set", async (req, res) => {
+  const { projectId, command, count } = req.body;
+  if (!projectId || !command || count === undefined) return res.status(400).json({ error: "projectId, command, count required" });
+  const n = Math.max(0, Math.min(100, parseInt(count)));
+  try {
+    await pool.query("DELETE FROM proto_runs WHERE project_id=$1 AND command=$2", [projectId, command]);
+    if (n > 0) {
+      await pool.query(
+        "INSERT INTO proto_runs (project_id, command) SELECT $1, $2 FROM generate_series(1, $3)",
+        [projectId, command, n]
+      );
+    }
+    res.json({ projectId, command, count: n });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get("/api/runs/counts", async (req, res) => {
   const { rows } = await pool.query(
     "SELECT project_id, command, COUNT(*) as count FROM proto_runs GROUP BY project_id, command"

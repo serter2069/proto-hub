@@ -23,7 +23,7 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; max-width: 1200px; }
 
 /* Card */
-.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; transition: border-color 0.15s, box-shadow 0.15s; position: relative; }
+.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; transition: border-color 0.15s, box-shadow 0.15s; position: relative; cursor: pointer; text-decoration: none; color: inherit; display: block; }
 .card:hover { border-color: #aaa; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
 .card.inactive { opacity: 0.5; }
 .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
@@ -38,10 +38,15 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 
 /* Chips */
 .chips { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-.chip { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 8px; }
+.chip { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 8px; cursor: pointer; user-select: none; transition: opacity 0.15s; }
+.chip:hover { opacity: 0.8; }
 .chip.red { background: #fef2f2; color: #dc2626; }
 .chip.yellow { background: #fefce8; color: #ca8a04; }
 .chip.green { background: #f0fdf4; color: #16a34a; }
+.chip-edit { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 4px; gap: 2px; }
+.chip-edit input { width: 32px; font-size: 11px; font-weight: 600; border: 1px solid #d1d5db; border-radius: 3px; padding: 1px 4px; text-align: center; outline: none; }
+.chip-edit input:focus { border-color: #2563eb; }
+.chip-edit .chip-label { font-size: 11px; color: #666; }
 
 /* Stories */
 .stories { font-size: 12px; color: #666; margin-bottom: 12px; }
@@ -201,7 +206,8 @@ function renderCard(p) {
       : 'Stories: ---';
   }
 
-  const card = document.createElement('div');
+  const card = document.createElement('a');
+  card.href = p.href;
   card.className = 'card' + (isActive ? '' : ' inactive');
   card.id = 'card-' + p.id;
   card.innerHTML =
@@ -209,22 +215,22 @@ function renderCard(p) {
       '<div class="card-name">' + p.name + '</div>' +
       '<div style="display:flex;align-items:center">' +
         (!isActive ? '<span class="inactive-label">inactive</span>' : '') +
-        '<div class="toggle ' + (isActive ? 'active' : '') + '" onclick="toggleActive(\'' + p.id + '\')" title="' + (isActive ? 'Active' : 'Inactive') + '"></div>' +
+        '<div class="toggle ' + (isActive ? 'active' : '') + '" onclick="event.preventDefault();event.stopPropagation();toggleActive(\'' + p.id + '\')" title="' + (isActive ? 'Active' : 'Inactive') + '"></div>' +
       '</div>' +
     '</div>' +
     '<div class="card-url">' + p.url + '</div>' +
     '<div class="chips">' +
-      '<span class="chip ' + chipColor(proto) + '">proto ' + proto + '/10</span>' +
-      '<span class="chip ' + chipColor(check) + '">proto-check ' + check + '/10</span>' +
+      '<span class="chip ' + chipColor(proto) + '" onclick="event.preventDefault();event.stopPropagation();editChip(\'' + p.id + '\',\'proto\',' + proto + ',this)">proto ' + proto + '/10</span>' +
+      '<span class="chip ' + chipColor(check) + '" onclick="event.preventDefault();event.stopPropagation();editChip(\'' + p.id + '\',\'proto-check\',' + check + ',this)">proto-check ' + check + '/10</span>' +
     '</div>' +
     '<div class="stories" id="stories-' + p.id + '">' + storiesText + '</div>' +
     '<div class="cmd-buttons">' +
-      '<button class="cmd-btn" onclick="runCmd(\'' + p.id + '\',\'proto\',this)">Run /proto<span class="spinner"></span></button>' +
-      '<button class="cmd-btn" onclick="runCmd(\'' + p.id + '\',\'proto-check\',this)">Run /proto-check<span class="spinner"></span></button>' +
+      '<button class="cmd-btn" onclick="event.preventDefault();event.stopPropagation();runCmd(\'' + p.id + '\',\'proto\',this)">Run /proto<span class="spinner"></span></button>' +
+      '<button class="cmd-btn" onclick="event.preventDefault();event.stopPropagation();runCmd(\'' + p.id + '\',\'proto-check\',this)">Run /proto-check<span class="spinner"></span></button>' +
     '</div>' +
-    '<div class="log-toggle" onclick="toggleLogs(\'' + p.id + '\')">&#9660; OH Logs</div>' +
+    '<div class="log-toggle" onclick="event.preventDefault();event.stopPropagation();toggleLogs(\'' + p.id + '\')">&#9660; OH Logs</div>' +
     '<div class="log-drawer" id="logs-' + p.id + '"></div>' +
-    '<a href="' + p.href + '" class="card-cta">Open prototypes &rarr;</a>';
+    '<span class="card-cta">Open prototypes &rarr;</span>';
   return card;
 }
 
@@ -313,6 +319,63 @@ async function toggleLogs(id) {
   } catch (e) {
     drawer.innerHTML = '<div class="log-loading">Error loading logs</div>';
   }
+}
+
+// --- Edit Chip ---
+function editChip(projectId, command, currentValue, chipEl) {
+  var label = command + ' ';
+  var wrapper = document.createElement('span');
+  wrapper.className = 'chip-edit';
+  var input = document.createElement('input');
+  input.type = 'number';
+  input.min = '0';
+  input.max = '99';
+  input.value = currentValue;
+  var suffix = document.createElement('span');
+  suffix.className = 'chip-label';
+  suffix.textContent = '/10';
+
+  wrapper.appendChild(document.createTextNode(label));
+  wrapper.appendChild(input);
+  wrapper.appendChild(suffix);
+
+  chipEl.replaceWith(wrapper);
+  input.focus();
+  input.select();
+
+  function save() {
+    var val = parseInt(input.value);
+    if (isNaN(val) || val < 0) val = 0;
+    if (val > 99) val = 99;
+    fetch(API + '/runs/set', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: projectId, command: command, count: val })
+    }).then(function(res) {
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
+    }).then(function(data) {
+      if (!state.runs[projectId]) state.runs[projectId] = {};
+      state.runs[projectId][command] = data.count;
+      renderGrid();
+      toast(command + ' set to ' + data.count + ' for ' + projectId);
+    }).catch(function(e) {
+      toast('Failed to update ' + command, true);
+      renderGrid();
+    });
+  }
+
+  function cancel() {
+    renderGrid();
+  }
+
+  input.addEventListener('keydown', function(e) {
+    e.stopPropagation();
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  });
+  input.addEventListener('blur', save);
+  input.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); });
 }
 
 // --- Init ---

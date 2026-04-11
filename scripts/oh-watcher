@@ -1,0 +1,337 @@
+#!/usr/bin/env bash
+# oh-watcher — Poll GitHub Issues with label "oh:ready", send to OpenHands resolver (native)
+# Runs via cron every 5 minutes
+#
+# KEY RULES:
+# 1. Auto-merge: after PR created → gh pr merge --auto --rebase --delete-branch
+# 2. Rebase-on-conflict: if open OH PR is CONFLICTING → rebase onto development automatically
+# 3. Max 2 concurrent per repo, max 10 globally
+
+set -uo pipefail
+
+LOG="/var/log/oh-watcher.log"
+STATE_DIR="/var/lib/oh-watcher"
+RESOLVER="/opt/oh-resolver/bin/python"
+MAX_PARALLEL=25
+MAX_PER_REPO=2
+REBASE_WORKDIR="/tmp/oh-rebase"
+
+REPOS=(
+  serter2069/p2ptax
+  serter2069/date-rabbit
+  serter2069/moto-social
+  serter2069/dressit
+  serter2069/avito-georgia
+  serter2069/chesstourism
+  serter2069/chekback
+  serter2069/schemeog
+  serter2069/bookhero
+  serter2069/wellnuo
+  serter2069/gun
+)
+
+mkdir -p "$STATE_DIR" "$REBASE_WORKDIR"
+
+# --- AUTO-CLEANUP DOCKER ---
+_docker_avail=$(df /mnt/HC_Volume_105370035 2>/dev/null | awk 'NR==2 {print $4}')
+_docker_total=$(df /mnt/HC_Volume_105370035 2>/dev/null | awk 'NR==2 {print $2}')
+if [ -n "$_docker_avail" ] && [ -n "$_docker_total" ] && [ "$_docker_total" -gt 0 ]; then
+  _used_pct=$(( (_docker_total - _docker_avail) * 100 / _docker_total ))
+  if [ "$_used_pct" -ge 80 ]; then
+    _freed=$(docker container prune -f 2>/dev/null | grep "reclaimed" || echo "none")
+    log "CLEANUP: Docker volume ${_used_pct}% full, pruned: ${_freed}"
+  fi
+fi
+
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"; }
+
+# ─── REBASE-ON-CONFLICT ────────────────────────────────────────────────────────
+# For every repo: find open OH PRs that are CONFLICTING → rebase onto base branch
+rebase_conflicting_prs() {
+  for repo in "${REPOS[@]}"; do
+    conflicting=$(gh pr list --repo "$repo" --state open \
+      --search "Fix issue # in:title" \
+      --json number,headRefName,baseRefName,mergeable \
+      --jq '.[] | select(.mergeable == "CONFLICTING") | "\(.number)|\(.headRefName)|\(.baseRefName)"' \
+      2>/dev/null || true)
+
+    [ -z "$conflicting" ] && continue
+
+    while IFS='|' read -r pr_num branch base_branch; do
+      [ -z "$pr_num" ] && continue
+      log "REBASE: $repo PR #$pr_num ($branch → $base_branch)"
+
+      tmp_dir="$REBASE_WORKDIR/${repo//\//-}-$pr_num"
+      rm -rf "$tmp_dir"
+      mkdir -p "$tmp_dir"
+
+      GH_TOKEN=$(gh auth token)
+      clone_url="https://serter2069:${GH_TOKEN}@github.com/${repo}.git"
+
+      if git clone "$clone_url" "$tmp_dir" --depth=100 --quiet 2>/dev/null; then
+        cd "$tmp_dir"
+        git fetch origin "$branch" --quiet 2>/dev/null || true
+        git checkout "$branch" --quiet 2>/dev/null
+
+        if git rebase "origin/${base_branch}" --quiet 2>/dev/null; then
+          if git push --force-with-lease origin "$branch" --quiet 2>/dev/null; then
+            log "REBASE OK: $repo PR #$pr_num rebased onto $base_branch"
+          else
+            log "REBASE PUSH FAIL: $repo PR #$pr_num"
+          fi
+        else
+          git rebase --abort 2>/dev/null || true
+          log "REBASE CONFLICT: $repo PR #$pr_num — unresolvable, needs manual fix"
+        fi
+        cd /
+      else
+        log "REBASE CLONE FAIL: $repo"
+      fi
+
+      rm -rf "$tmp_dir"
+    done <<< "$conflicting"
+  done
+}
+
+
+# ─── AUTO-RETRY oh:failed ──────────────────────────────────────────────────────
+# Issues with oh:failed that were updated >30min ago AND failed <3 times → oh:ready
+# Issues that failed >=3 times → oh:abandoned (stop retrying)
+retry_failed_issues() {
+  local cutoff
+  cutoff=$(date -u -d '30 minutes ago' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null ||            date -u -v-30M '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null)
+  [ -z "$cutoff" ] && return
+
+  for repo in "${REPOS[@]}"; do
+    failed_old=$(gh issue list --repo "$repo" --label "oh:failed" --state open       --json number,updatedAt       --jq --arg cutoff "$cutoff"       '.[] | select(.updatedAt < $cutoff) | .number' 2>/dev/null || true)
+
+    [ -z "$failed_old" ] && continue
+
+    while read -r issue_num; do
+      [ -z "$issue_num" ] && continue
+      # Count how many times this issue previously failed (= number of failure comments)
+      fail_count=$(gh issue view "$issue_num" --repo "$repo" --json comments         --jq '[.comments[].body | select(startswith("OpenHands resolver failed"))] | length'         2>/dev/null || echo "0")
+      if [ "${fail_count:-0}" -ge 3 ]; then
+        gh issue edit "$issue_num" --repo "$repo"           --remove-label "oh:failed" --add-label "oh:abandoned" 2>/dev/null || true
+        log "ABANDON: $repo#$issue_num failed ${fail_count}x — marking abandoned"
+      else
+        gh issue edit "$issue_num" --repo "$repo"           --remove-label "oh:failed" --add-label "oh:ready" 2>/dev/null || true
+        log "RETRY: $repo#$issue_num (attempt $((fail_count+1))/3)"
+      fi
+    done <<< "$failed_old"
+  done
+}
+# ─── AUTO-RETRY FAILED + REBASE ─────────────────────────────────────────────
+retry_failed_issues
+rebase_conflicting_prs
+
+# ─── CHECK GLOBAL LIMIT ───────────────────────────────────────────────────────
+running=$(find "$STATE_DIR" -maxdepth 1 -name "running-*" 2>/dev/null | wc -l | tr -d " ")
+if [ "$running" -ge "$MAX_PARALLEL" ]; then
+  log "SKIP: $running jobs already running (max $MAX_PARALLEL)"
+  log "POLL complete"
+  exit 0
+fi
+
+# ─── PICK NEW ISSUES ──────────────────────────────────────────────────────────
+for repo in "${REPOS[@]}"; do
+  # Skip if too many open OH PRs for this repo
+  open_prs=$(gh pr list --repo "$repo" --state open \
+    --search "Fix issue # in:title" \
+    --json number --jq 'length' 2>/dev/null || echo "0")
+  if [ "$open_prs" -ge "$MAX_PER_REPO" ]; then
+    log "WAIT: $repo has $open_prs open OH PR(s) — skipping until merged/rebased"
+    continue
+  fi
+
+  # Skip if already running MAX_PER_REPO jobs for this repo
+  repo_running=$(find "$STATE_DIR" -maxdepth 1 -name "running-${repo//\//-}-*" 2>/dev/null | wc -l | tr -d " ")
+  if [ "$repo_running" -ge "$MAX_PER_REPO" ]; then
+    continue
+  fi
+
+  issues=$(gh issue list --repo "$repo" --label "oh:ready" --state open \
+    --json number,title --jq '.[] | "\(.number)|\(.title)"' 2>/dev/null || echo "")
+  [ -z "$issues" ] && continue
+
+  # Take first available issue not already running
+  while IFS='|' read -r issue_num issue_title; do
+    [ -z "$issue_num" ] && continue
+    sentinel="$STATE_DIR/running-${repo//\//-}-$issue_num"
+
+    if [ -f "$sentinel" ]; then
+      if [ "$(find "$sentinel" -mmin +60 2>/dev/null)" ]; then
+        log "STALE: removing stale sentinel for $repo#$issue_num"
+        rm -f "$sentinel"
+      else
+        continue
+      fi
+    fi
+
+    # Check global limit again
+    running=$(find "$STATE_DIR" -maxdepth 1 -name "running-*" 2>/dev/null | wc -l | tr -d " ")
+    if [ "$running" -ge "$MAX_PARALLEL" ]; then
+      log "LIMIT: max parallel reached ($MAX_PARALLEL)"
+      break 2
+    fi
+
+    # RAM check: need at least 1.5GB free before launching new container
+    mem_avail_mb=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
+    if [ "${mem_avail_mb:-0}" -lt 1536 ]; then
+      log "SKIP RAM: $repo#$issue_num — only ${mem_avail_mb}MB available (need 1536MB)"
+      break 2
+    fi
+
+    stagger_delay=10
+    [ "$stagger_delay" -gt 0 ] && sleep "$stagger_delay"
+    log "START: $repo#$issue_num — $issue_title"
+    touch "$sentinel"
+    gh issue edit "$issue_num" --repo "$repo" \
+      --remove-label "oh:ready" --add-label "oh:progress" 2>/dev/null || true
+
+    # ── COMMANDS REGISTRY INJECT ───────────────────────────────────────────────
+    # If issue body references a /command-name, fetch instructions from registry
+    # and post as comment so OpenHands has full context
+    _issue_body=$(gh issue view "$issue_num" --repo "$repo" --json body --jq ".body" 2>/dev/null || echo "")
+    _cmd_name=$(echo "$_issue_body" | grep -oP "(?<=^/)[a-zA-Z0-9_-]+" | head -1)
+    if [ -z "$_cmd_name" ]; then
+      # Also detect pattern "Command: xxx" or "cmd: xxx"
+      _cmd_name=$(echo "$_issue_body" | grep -oiP "(?<=^command: |^cmd: )[a-zA-Z0-9_-]+" | head -1)
+    fi
+    if [ -n "$_cmd_name" ]; then
+      _cmd_json=$(curl -sf "https://proto.smartlaunchhub.com/api/commands/${_cmd_name}" 2>/dev/null)
+      if [ -n "$_cmd_json" ]; then
+        _cmd_content=$(echo "$_cmd_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("content",""))' 2>/dev/null)
+        if [ -n "$_cmd_content" ]; then
+          _already=$(gh issue view "$issue_num" --repo "$repo" --json comments --jq ".comments[].body" 2>/dev/null | grep -c "^## Instructions: /${_cmd_name}" 2>/dev/null; true)
+          if [ "${_already:-0}" -eq 0 ]; then
+            gh issue comment "$issue_num" --repo "$repo"               --body "## Instructions: /${_cmd_name}
+
+Fetched from Commands Registry: https://proto.smartlaunchhub.com/api/commands/${_cmd_name}
+
+${_cmd_content}" 2>/dev/null || true
+            log "INJECT: $repo#$issue_num — /${_cmd_name} from Commands Registry"
+          fi
+        fi
+      fi
+    fi
+    # ──────────────────────────────────────────────────────────────────────────
+
+
+    (
+      set +e
+      trap "rm -f '$sentinel'" EXIT
+
+      GH_TOKEN=$(gh auth token)
+      OUTPUT_DIR="/var/lib/oh-watcher/output/${repo//\//-}/$issue_num"
+      mkdir -p "$OUTPUT_DIR"
+
+      export GITHUB_TOKEN="$GH_TOKEN"
+      export LLM_MODEL="openai/glm-5.1"
+      export LLM_API_KEY="sk-d6b3f12535063b81-5ad90d-73e101c7"
+      export LLM_BASE_URL="http://localhost:20128/v1"
+      export SANDBOX_RUNTIME_CONTAINER_IMAGE="docker.openhands.dev/openhands/runtime:1.6-nikolaik"
+      export SANDBOX_USER_ID=1000
+
+      RESOLVE_LOG="/var/log/oh-resolve-${repo//\//-}-${issue_num}.log"
+
+      "$RESOLVER" -m openhands.resolver.resolve_issue \
+        --selected-repo "$repo" \
+        --issue-number "$issue_num" \
+        --username "serter2069" \
+        --token "$GH_TOKEN" \
+        --llm-model "openai/glm-5.1" \
+        --llm-api-key "sk-d6b3f12535063b81-5ad90d-73e101c7" \
+        --llm-base-url "http://localhost:20128/v1" \
+        --runtime-container-image "docker.openhands.dev/openhands/runtime:1.6-nikolaik" \
+        --max-iterations 300 \
+        --output-dir "$OUTPUT_DIR" \
+        >> "$RESOLVE_LOG" 2>&1
+      resolve_exit=$?
+
+      pr_exit=1
+      pr_number=""
+      if [ $resolve_exit -eq 0 ]; then
+        pr_output=$("$RESOLVER" -m openhands.resolver.send_pull_request \
+          --selected-repo "$repo" \
+          --issue-number "$issue_num" \
+          --username "serter2069" \
+          --token "$GH_TOKEN" \
+          --output-dir "$OUTPUT_DIR" \
+          --pr-type ready \
+          --send-on-failure \
+          --target-branch development \
+          --llm-model "openai/glm-5.1" \
+          --llm-api-key "sk-d6b3f12535063b81-5ad90d-73e101c7" \
+          --llm-base-url "http://localhost:20128/v1" \
+          2>&1 | tee -a "$RESOLVE_LOG")
+        pr_exit=$?
+
+        pr_number=$(echo "$pr_output" | grep -oP 'pull/\K[0-9]+' | tail -1)
+
+        if [ $pr_exit -eq 0 ] && [ -n "$pr_number" ]; then
+          log "AUTO-MERGE: $repo PR #$pr_number"
+          gh pr merge "$pr_number" --repo "$repo" --rebase --delete-branch 2>>"$RESOLVE_LOG" || \
+          gh pr merge "$pr_number" --repo "$repo" --squash --delete-branch 2>>"$RESOLVE_LOG" || true
+        fi
+      fi
+
+      # Cleanup output dir: keep only output.jsonl, delete repo/workspace clones
+      rm -rf "$OUTPUT_DIR/repo" "$OUTPUT_DIR/workspace" "$OUTPUT_DIR/infer_logs" 2>/dev/null || true
+
+      if [ $resolve_exit -eq 0 ] && [ $pr_exit -eq 0 ]; then
+        log "DONE: $repo#$issue_num — PR #${pr_number:-?} created + merged"
+        gh issue edit "$issue_num" --repo "$repo" \
+          --remove-label "oh:progress" --add-label "oh:done" 2>/dev/null || true
+
+        # ─── COUNTER INCREMENT ──────────────────────────────────────────────
+        # Notify proto-hub-api that a successful run completed so that
+        # /api/runs/counts and /api/runs/needs-work reflect reality.
+        # Project slug derived from repo name; command from issue title
+        # (format: "<cmd>: <project>") with fallback to $_cmd_name.
+        _proj_slug=""
+        case "$repo" in
+          serter2069/p2ptax)         _proj_slug="p2ptax" ;;
+          serter2069/date-rabbit)    _proj_slug="daterabbit" ;;
+          serter2069/moto-social)    _proj_slug="motosocial" ;;
+          serter2069/dressit)        _proj_slug="dressit" ;;
+          serter2069/avito-georgia)  _proj_slug="avito-georgia" ;;
+          serter2069/chesstourism)   _proj_slug="chesstourism" ;;
+          serter2069/gun)            _proj_slug="gun" ;;
+          serter2069/chekback)       _proj_slug="chekback" ;;
+          serter2069/schemeog)       _proj_slug="schemeog" ;;
+          serter2069/bookhero)       _proj_slug="bookhero" ;;
+          serter2069/wellnuo)        _proj_slug="wellnuo" ;;
+        esac
+        _title_cmd=$(printf '%s' "$issue_title" | grep -oE '^[a-zA-Z0-9_-]+(:|$)' | tr -d ':' | head -1)
+        _run_cmd="${_title_cmd:-${_cmd_name:-}}"
+        if [ -n "$_proj_slug" ] && [ -n "$_run_cmd" ]; then
+          _inc_resp=$(curl -sS -X POST http://localhost:3901/api/runs \
+            -H 'Content-Type: application/json' \
+            -d "{\"projectId\":\"$_proj_slug\",\"command\":\"$_run_cmd\"}" 2>&1)
+          if [ -n "$_inc_resp" ]; then
+            log "COUNTER: $_proj_slug/$_run_cmd incremented via $repo#$issue_num"
+          else
+            log "WARN: counter increment failed for $_proj_slug/$_run_cmd ($repo#$issue_num)"
+          fi
+        else
+          log "WARN: counter skip — slug=$_proj_slug cmd=$_run_cmd ($repo#$issue_num)"
+        fi
+        # ────────────────────────────────────────────────────────────────────
+      else
+        log "FAIL: $repo#$issue_num — resolve=$resolve_exit pr=$pr_exit"
+        gh issue edit "$issue_num" --repo "$repo" \
+          --remove-label "oh:progress" --add-label "oh:failed" 2>/dev/null || true
+        gh issue comment "$issue_num" --repo "$repo" \
+          --body "OpenHands resolver failed (resolve=$resolve_exit, pr=$pr_exit). Check /var/log/oh-resolve-${repo//\//-}-${issue_num}.log" \
+          2>/dev/null || true
+      fi
+    ) &
+
+    # Only start one new job per repo per poll cycle
+    break
+  done <<< "$issues"
+done
+
+log "POLL complete"

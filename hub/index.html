@@ -8,63 +8,337 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #f5f5f5; color: #111; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; padding: 40px 24px; }
 h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
-.subtitle { color: #666; margin-bottom: 40px; font-size: 14px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; max-width: 1100px; }
-.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: border-color 0.15s, box-shadow 0.15s; display: block; }
+.subtitle { color: #666; margin-bottom: 32px; font-size: 14px; }
+
+/* Cron Monitor */
+.cron-monitor { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 32px; max-width: 1200px; }
+.cron-monitor h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.cron-line { font-size: 13px; color: #444; margin-bottom: 6px; }
+.cron-line strong { color: #111; }
+.cron-btn { display: inline-block; margin-top: 10px; padding: 6px 14px; font-size: 12px; font-weight: 600; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: background 0.15s; }
+.cron-btn:hover { background: #1d4ed8; }
+.cron-btn:disabled { background: #93c5fd; cursor: wait; }
+
+/* Grid */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; max-width: 1200px; }
+
+/* Card */
+.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; transition: border-color 0.15s, box-shadow 0.15s; position: relative; }
 .card:hover { border-color: #aaa; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-.card-name { font-size: 17px; font-weight: 600; margin-bottom: 5px; }
-.card-url { font-size: 12px; color: #999; margin-bottom: 14px; }
-.card-cta { font-size: 13px; color: #2563eb; }
-.badge { display: inline-block; font-size: 11px; background: #f0f0f0; color: #888; border-radius: 4px; padding: 2px 7px; margin-bottom: 12px; }
-.badge.ready { background: #dcfce7; color: #16a34a; }
+.card.inactive { opacity: 0.5; }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.card-name { font-size: 17px; font-weight: 600; }
+.card-url { font-size: 12px; color: #999; margin-bottom: 12px; }
+
+/* Active toggle */
+.toggle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #d1d5db; background: #fff; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+.toggle.active { background: #22c55e; border-color: #22c55e; }
+.toggle:hover { border-color: #9ca3af; }
+.inactive-label { font-size: 11px; color: #9ca3af; margin-left: 6px; }
+
+/* Chips */
+.chips { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.chip { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 8px; }
+.chip.red { background: #fef2f2; color: #dc2626; }
+.chip.yellow { background: #fefce8; color: #ca8a04; }
+.chip.green { background: #f0fdf4; color: #16a34a; }
+
+/* Stories */
+.stories { font-size: 12px; color: #666; margin-bottom: 12px; }
+
+/* Command buttons */
+.cmd-buttons { display: flex; gap: 8px; margin-bottom: 12px; }
+.cmd-btn { padding: 5px 12px; font-size: 11px; font-weight: 600; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+.cmd-btn:hover { background: #e5e7eb; }
+.cmd-btn:disabled { opacity: 0.5; cursor: wait; }
+.cmd-btn .spinner { display: none; width: 10px; height: 10px; border: 2px solid #999; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-left: 4px; vertical-align: middle; }
+.cmd-btn:disabled .spinner { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Log drawer */
+.log-toggle { font-size: 12px; color: #2563eb; cursor: pointer; margin-bottom: 8px; user-select: none; }
+.log-toggle:hover { text-decoration: underline; }
+.log-drawer { display: none; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; max-height: 260px; overflow-y: auto; }
+.log-drawer.open { display: block; }
+.log-entry { font-size: 12px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+.log-entry:last-child { border-bottom: none; }
+.log-ts { color: #888; margin-right: 6px; }
+.log-badge { display: inline-block; font-size: 10px; font-weight: 700; border-radius: 3px; padding: 1px 5px; margin-right: 4px; }
+.log-badge.done { background: #dcfce7; color: #16a34a; }
+.log-badge.fail { background: #fef2f2; color: #dc2626; }
+.log-badge.start { background: #fefce8; color: #ca8a04; }
+.log-links { font-size: 11px; color: #2563eb; margin-top: 2px; }
+.log-links a { color: #2563eb; text-decoration: none; margin-right: 8px; }
+.log-links a:hover { text-decoration: underline; }
+.log-loading { font-size: 12px; color: #999; }
+
+/* CTA */
+.card-cta { display: inline-block; font-size: 13px; color: #2563eb; text-decoration: none; }
+.card-cta:hover { text-decoration: underline; }
+
+/* Toast */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 100; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: #111; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; animation: fadeIn 0.2s; }
+.toast.error { background: #dc2626; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Loading pulse */
+.loading { color: #aaa; font-size: 12px; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.pulse { animation: pulse 1.5s ease-in-out infinite; }
 </style>
 </head>
 <body>
+
 <h1>Proto Hub</h1>
 <p class="subtitle">All project prototypes — staging iframes, no login required</p>
-<div class="grid">
-  <a href="/reference/" class="card">
-    <div class="card-name">Reference Template</div>
-    <div class="card-url">Mandatory pages template</div>
-    <span class="badge ready">reference</span>
-    <div class="card-cta">Open prototypes &rarr;</div>
-  </a>
-  <a href="/p2ptax/" class="card">
-    <div class="card-name">P2PTax</div>
-    <div class="card-url">p2ptax.smartlaunchhub.com</div>
-    <span class="badge ready">ready</span>
-    <div class="card-cta">Open prototypes &rarr;</div>
-  </a>
-  <a href="/avito-georgia/" class="card">
-    <div class="card-name">Avito Georgia</div>
-    <div class="card-url">avito-georgia.smartlaunchhub.com</div>
-    <span class="badge ready">ready</span>
-    <div class="card-cta">Open prototypes &rarr;</div>
-  </a>
-  <a href="/chesstourism/" class="card">
-    <div class="card-name">Chess Tourism</div>
-    <div class="card-url">chesstourism.smartlaunchhub.com</div>
-    <span class="badge ready">ready</span>
-    <div class="card-cta">Open prototypes &rarr;</div>
-  </a>
-  <a href="/daterabbit/" class="card">
-    <div class="card-name">DateRabbit</div>
-    <div class="card-url">daterabbit.smartlaunchhub.com</div>
-    <span class="badge ready">ready</span>
-    <div class="card-cta">Open prototypes &rarr;</div>
-  </a>
-  <a href="/gun/" class="card">
-    <div class="card-name">Gun Market</div>
-    <div class="card-url">arms-market.smartlaunchhub.com</div>
-    <span class="badge ready">ready</span>
-    <div class="card-cta">Open prototypes &rarr;</div>
-  </a>
-  <a href="/dressit/" class="card">
-    <div class="card-name">DressIT</div>
-    <div class="card-url">dressitnow.com</div>
-    <span class="badge ready">ready</span>
-    <div class="card-cta">Open prototypes &rarr;</div>
-  </a>
+
+<div class="cron-monitor" id="cronMonitor">
+  <h2>Automation Status</h2>
+  <div id="cronContent" class="loading pulse">Loading...</div>
 </div>
+
+<div class="grid" id="projectGrid"></div>
+<div class="toast-container" id="toasts"></div>
+
+<script>
+const API = '/hub/api';
+const API_KEY = 'proto-hub-2026';
+const PROJECTS = [
+  {id: 'reference', name: 'Reference Template', url: 'Mandatory pages template', href: '/reference/'},
+  {id: 'p2ptax', name: 'P2PTax', url: 'p2ptax.smartlaunchhub.com', href: '/p2ptax/'},
+  {id: 'avito-georgia', name: 'Avito Georgia', url: 'avito-georgia.smartlaunchhub.com', href: '/avito-georgia/'},
+  {id: 'chesstourism', name: 'Chess Tourism', url: 'chesstourism.smartlaunchhub.com', href: '/chesstourism/'},
+  {id: 'daterabbit', name: 'DateRabbit', url: 'daterabbit.smartlaunchhub.com', href: '/daterabbit/'},
+  {id: 'gun', name: 'Gun Market', url: 'arms-market.smartlaunchhub.com', href: '/gun/'},
+  {id: 'dressit', name: 'DressIT', url: 'dressitnow.com', href: '/dressit/'},
+  {id: 'motosocial', name: 'MotoSocial', url: 'moto.smartlaunchhub.com', href: '/moto/'},
+];
+
+const state = { runs: {}, active: {}, stories: {}, logCache: {} };
+
+function toast(msg, isError) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function chipColor(n) {
+  if (n >= 8) return 'green';
+  if (n >= 3) return 'yellow';
+  return 'red';
+}
+
+function fmtTime(ts) {
+  if (!ts) return '---';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function apiFetch(path) {
+  const res = await fetch(API + path);
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+
+// --- Cron Monitor ---
+async function loadCron() {
+  const el = document.getElementById('cronContent');
+  try {
+    const data = await apiFetch('/cron/last-run');
+    const sc = data.smartCron || {};
+    const oh = data.ohWatcher || {};
+    const lh = oh.lastHour || {};
+    el.className = '';
+    el.innerHTML =
+      '<div class="cron-line"><strong>Smart-cron:</strong> last run ' + fmtTime(sc.lastRun) +
+      ' &mdash; created ' + (sc.createdIssues || []).length + ' issues</div>' +
+      '<div class="cron-line"><strong>OH-watcher:</strong> last poll ' + fmtTime(oh.lastPoll) +
+      ' &mdash; ' + (lh.start || 0) + ' jobs running</div>' +
+      '<div class="cron-line">Last hour: <strong>' + (lh.done || 0) + '</strong> DONE / <strong>' +
+      (lh.fail || 0) + '</strong> FAIL</div>' +
+      '<button class="cron-btn" onclick="triggerCron()">&#9654; Run smart-cron now</button>';
+  } catch (e) {
+    el.className = '';
+    el.textContent = 'Error loading cron status';
+  }
+}
+
+async function triggerCron() {
+  const btn = document.querySelector('.cron-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  try {
+    await fetch(API + '/cron/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Proto-Key': API_KEY },
+      body: JSON.stringify({ command: 'smart-cron' })
+    });
+    toast('Smart-cron triggered');
+    setTimeout(loadCron, 2000);
+  } catch (e) {
+    toast('Failed to trigger smart-cron', true);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '&#9654; Run smart-cron now';
+}
+
+// --- Render ---
+function renderCard(p) {
+  const runs = state.runs[p.id] || {};
+  const proto = runs.proto || 0;
+  const check = runs['proto-check'] || 0;
+  const isActive = state.active[p.id] !== false;
+  const story = state.stories[p.id];
+
+  let storiesText = 'Stories: loading...';
+  if (story) {
+    storiesText = story.total > 0
+      ? 'Stories: ' + story.passed + ' passed / ' + story.total + ' total'
+      : 'Stories: ---';
+  }
+
+  const card = document.createElement('div');
+  card.className = 'card' + (isActive ? '' : ' inactive');
+  card.id = 'card-' + p.id;
+  card.innerHTML =
+    '<div class="card-header">' +
+      '<div class="card-name">' + p.name + '</div>' +
+      '<div style="display:flex;align-items:center">' +
+        (!isActive ? '<span class="inactive-label">inactive</span>' : '') +
+        '<div class="toggle ' + (isActive ? 'active' : '') + '" onclick="toggleActive(\'' + p.id + '\')" title="' + (isActive ? 'Active' : 'Inactive') + '"></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card-url">' + p.url + '</div>' +
+    '<div class="chips">' +
+      '<span class="chip ' + chipColor(proto) + '">proto ' + proto + '/10</span>' +
+      '<span class="chip ' + chipColor(check) + '">proto-check ' + check + '/10</span>' +
+    '</div>' +
+    '<div class="stories" id="stories-' + p.id + '">' + storiesText + '</div>' +
+    '<div class="cmd-buttons">' +
+      '<button class="cmd-btn" onclick="runCmd(\'' + p.id + '\',\'proto\',this)">Run /proto<span class="spinner"></span></button>' +
+      '<button class="cmd-btn" onclick="runCmd(\'' + p.id + '\',\'proto-check\',this)">Run /proto-check<span class="spinner"></span></button>' +
+    '</div>' +
+    '<div class="log-toggle" onclick="toggleLogs(\'' + p.id + '\')">&#9660; OH Logs</div>' +
+    '<div class="log-drawer" id="logs-' + p.id + '"></div>' +
+    '<a href="' + p.href + '" class="card-cta">Open prototypes &rarr;</a>';
+  return card;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('projectGrid');
+  grid.innerHTML = '';
+  PROJECTS.forEach(function(p) { grid.appendChild(renderCard(p)); });
+}
+
+// --- Toggle Active ---
+async function toggleActive(id) {
+  const current = state.active[id] !== false;
+  try {
+    await fetch(API + '/projects/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: !current })
+    });
+    state.active[id] = !current;
+    renderGrid();
+    toast(id + (!current ? ' activated' : ' deactivated'));
+  } catch (e) {
+    toast('Failed to toggle ' + id, true);
+  }
+}
+
+// --- Run Command ---
+async function runCmd(project, command, btn) {
+  btn.disabled = true;
+  try {
+    await fetch(API + '/cron/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Proto-Key': API_KEY },
+      body: JSON.stringify({ command: command === 'proto' ? 'proto-cron' : 'proto-cron', project: project })
+    });
+    toast('Queued for ' + project);
+  } catch (e) {
+    toast('Failed to queue ' + project, true);
+  }
+  btn.disabled = false;
+}
+
+// --- Log Drawer ---
+async function toggleLogs(id) {
+  const drawer = document.getElementById('logs-' + id);
+  if (drawer.classList.contains('open')) {
+    drawer.classList.remove('open');
+    return;
+  }
+  drawer.classList.add('open');
+
+  var cached = state.logCache[id];
+  if (cached && Date.now() - cached.ts < 60000) {
+    drawer.innerHTML = cached.html;
+    return;
+  }
+
+  drawer.innerHTML = '<div class="log-loading pulse">Loading logs...</div>';
+  try {
+    var logs = await apiFetch('/projects/' + id + '/oh-logs?limit=5');
+    if (!logs.length) {
+      drawer.innerHTML = '<div class="log-loading">No logs yet</div>';
+      state.logCache[id] = { ts: Date.now(), html: drawer.innerHTML };
+      return;
+    }
+    var html = '';
+    logs.forEach(function(log) {
+      var badge = (log.status || 'unknown').toUpperCase();
+      var badgeClass = badge === 'DONE' ? 'done' : badge === 'FAIL' ? 'fail' : 'start';
+      var issueUrl = 'https://github.com/serter2069/' + id + '/issues/' + log.issueNumber;
+      var links = '';
+      if (log.prUrl) links += '<a href="' + log.prUrl + '" target="_blank">PR</a>';
+      if (log.commitUrl) links += '<a href="' + log.commitUrl + '" target="_blank">commit</a>';
+      if (log.logFile) links += '<a href="' + API + '/projects/' + id + '/oh-logs/' + log.logFile + '/raw" target="_blank">view full log</a>';
+      html +=
+        '<div class="log-entry">' +
+          '<span class="log-ts">' + fmtTime(log.ts) + '</span>' +
+          '<span class="log-badge ' + badgeClass + '">' + badge + '</span>' +
+          '<a href="' + issueUrl + '" target="_blank">#' + log.issueNumber + '</a> ' +
+          (log.command !== 'unknown' ? log.command : '') +
+          (links ? '<div class="log-links">' + links + '</div>' : '') +
+        '</div>';
+    });
+    drawer.innerHTML = html;
+    state.logCache[id] = { ts: Date.now(), html: html };
+  } catch (e) {
+    drawer.innerHTML = '<div class="log-loading">Error loading logs</div>';
+  }
+}
+
+// --- Init ---
+async function init() {
+  renderGrid();
+  loadCron();
+
+  apiFetch('/runs/counts').then(function(data) {
+    state.runs = data;
+    renderGrid();
+  }).catch(function() {});
+
+  PROJECTS.forEach(function(p) {
+    apiFetch('/projects/' + p.id + '/active').then(function(data) {
+      state.active[p.id] = data.active;
+      renderGrid();
+    }).catch(function() {});
+
+    apiFetch('/projects/' + p.id + '/stories/summary').then(function(data) {
+      state.stories[p.id] = data;
+      renderGrid();
+    }).catch(function() {});
+  });
+}
+
+init();
+</script>
 </body>
 </html>

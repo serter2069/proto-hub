@@ -2,6 +2,7 @@ const express = require("express");
 const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
+const { execSync, spawn } = require("child_process");
 
 const app = express();
 app.use(express.json());
@@ -61,6 +62,19 @@ async function initTables() {
       output TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
+  `);
+
+  // proto_projects — active/inactive flag per project
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS proto_projects (
+      id TEXT PRIMARY KEY,
+      active BOOLEAN DEFAULT true,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    INSERT INTO proto_projects (id) VALUES ('p2ptax'),('daterabbit'),('dressit'),('avito-georgia'),('chesstourism'),('gun'),('motosocial'),('reference')
+    ON CONFLICT DO NOTHING
   `);
 
   console.log("All tables ready");
@@ -410,6 +424,277 @@ app.get("/api/projects/:id/coverage", async (req, res) => {
   };
 
   res.json({ project: req.params.id, summary, pages: rows });
+});
+
+// ─── CRON MONITORING ─────────────────────────────────────────────────────────
+
+// GET /api/cron/last-run — parse log files for last run info
+app.get("/api/cron/last-run", (req, res) => {
+  try {
+    // Parse proto-smart-cron log
+    let smartCron = { lastRun: null, createdIssues: [] };
+    try {
+      const cronLog = execSync("tail -200 /var/log/proto-smart-cron.log", { encoding: "utf8", timeout: 5000 });
+      const lines = cronLog.split("\n");
+
+      // Find last "proto-smart-cron starting" line
+      let lastStartIdx = -1;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].includes("proto-smart-cron starting")) {
+          lastStartIdx = i;
+          break;
+        }
+      }
+
+      if (lastStartIdx >= 0) {
+        const tsMatch = lines[lastStartIdx].match(/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/);
+        if (tsMatch) smartCron.lastRun = new Date(tsMatch[1]).toISOString();
+
+        // Collect CREATED lines after lastStartIdx
+        for (let i = lastStartIdx + 1; i < lines.length; i++) {
+          const cm = lines[i].match(/CREATED: ([^#]+)#(\d+)\s*—\s*(\S+):\s*(\S+)/);
+          if (cm) {
+            smartCron.createdIssues.push({
+              repo: cm[1].trim(),
+              number: parseInt(cm[2]),
+              command: cm[3],
+              project: cm[4],
+            });
+          }
+        }
+      }
+    } catch (e) { /* log file may not exist */ }
+
+    // Parse oh-watcher log
+    let ohWatcher = { lastPoll: null, lastHour: { start: 0, done: 0, fail: 0 } };
+    try {
+      const ohLog = execSync("tail -500 /var/log/oh-watcher.log", { encoding: "utf8", timeout: 5000 });
+      const lines = ohLog.split("\n");
+
+      // Find last "POLL complete" line
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].includes("POLL complete") || lines[i].includes("oh-watcher starting") || lines[i].includes("POLL:")) {
+          const tsMatch = lines[i].match(/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/);
+          if (tsMatch) { ohWatcher.lastPoll = new Date(tsMatch[1]).toISOString(); break; }
+        }
+      }
+
+      // Count START/DONE/FAIL in last hour
+      const oneHourAgo = Date.now() - 3600000;
+      for (const line of lines) {
+        const tsMatch = line.match(/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/);
+        if (!tsMatch) continue;
+        const lineTime = new Date(tsMatch[1]).getTime();
+        if (lineTime < oneHourAgo) continue;
+
+        if (line.includes("START:")) ohWatcher.lastHour.start++;
+        else if (line.includes("DONE:")) ohWatcher.lastHour.done++;
+        else if (line.includes("FAIL:")) ohWatcher.lastHour.fail++;
+      }
+    } catch (e) { /* log file may not exist */ }
+
+    res.json({ smartCron, ohWatcher });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/cron/trigger — trigger smart-cron or proto-cron
+app.post("/api/cron/trigger", (req, res) => {
+  // Auth check
+  const protoKey = process.env.PROTO_KEY;
+  if (protoKey && req.headers["x-proto-key"] !== protoKey) {
+    return res.status(403).json({ error: "Invalid or missing X-Proto-Key" });
+  }
+
+  const { command, project } = req.body;
+  if (!command) return res.status(400).json({ error: "command required" });
+
+  let cmd, args;
+  if (command === "smart-cron") {
+    cmd = "/usr/local/bin/proto-smart-cron";
+    args = [];
+  } else if (command === "proto-cron") {
+    if (!project) return res.status(400).json({ error: "project required for proto-cron" });
+    cmd = "/usr/local/bin/proto-cron";
+    args = [project];
+  } else {
+    return res.status(400).json({ error: "command must be smart-cron or proto-cron" });
+  }
+
+  try {
+    const child = spawn(cmd, args, { detached: true, stdio: "ignore" });
+    child.unref();
+    res.json({ status: "started", pid: child.pid });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── OH LOGS ─────────────────────────────────────────────────────────────────
+
+// GET /api/projects/:id/oh-logs — scan oh-resolve log files for a project
+app.get("/api/projects/:id/oh-logs", (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const limit = parseInt(req.query.limit) || 5;
+    const logDir = "/var/log";
+
+    // Find matching log files: oh-resolve-serter2069-*-<projectId>-*.log
+    // Also match oh-resolve-serter2069-<projectId>-*.log (repo name may equal project id)
+    const allFiles = fs.readdirSync(logDir);
+    const pattern = new RegExp(`^oh-resolve-serter2069-.*${projectId.replace(/[^a-z0-9-]/g, '')}.*\\.log$`, "i");
+    const matched = allFiles
+      .filter(f => pattern.test(f))
+      .map(f => ({ name: f, mtime: fs.statSync(path.join(logDir, f)).mtime }))
+      .sort((a, b) => b.mtime - a.mtime)
+      .slice(0, limit);
+
+    // Parse oh-watcher.log for status info
+    let ohLines = [];
+    try {
+      ohLines = execSync("tail -1000 /var/log/oh-watcher.log", { encoding: "utf8", timeout: 5000 }).split("\n");
+    } catch (e) { /* ignore */ }
+
+    const results = matched.map(f => {
+      const issueMatch = f.name.match(/-(\d+)\.log$/);
+      const issueNumber = issueMatch ? parseInt(issueMatch[1]) : null;
+
+      let status = "UNKNOWN";
+      let prUrl = null;
+      let commitUrl = null;
+
+      if (issueNumber) {
+        // Search oh-watcher log for this issue number
+        for (let i = ohLines.length - 1; i >= 0; i--) {
+          const line = ohLines[i];
+          if (!line.includes(`#${issueNumber}`)) continue;
+
+          if (line.includes("DONE:")) {
+            status = "DONE";
+            // Extract PR number: "PR #NNN created" or "PR #NNN"
+            const prMatch = line.match(/PR\s*#(\d+)/);
+            if (prMatch) {
+              // Determine repo name from the log line or filename
+              const repoMatch = line.match(/serter2069\/([^\s#]+)/);
+              const repoName = repoMatch ? repoMatch[1] : null;
+              if (repoName) prUrl = `https://github.com/serter2069/${repoName}/pull/${prMatch[1]}`;
+            }
+            break;
+          } else if (line.includes("FAIL:")) { status = "FAIL"; break; }
+          else if (line.includes("START:")) { status = "START"; break; }
+        }
+      }
+
+      // Determine command from filename or content
+      let command = "unknown";
+      const cmdMatch = f.name.match(/oh-resolve-serter2069-[^-]+-(\d+)\.log/);
+      // Try reading first few lines for command info
+      try {
+        const head = execSync(`head -5 ${path.join(logDir, f.name)}`, { encoding: "utf8", timeout: 2000 });
+        if (head.includes("proto-check")) command = "proto-check";
+        else if (head.includes("proto")) command = "proto";
+      } catch (e) { /* ignore */ }
+
+      return {
+        ts: f.mtime.toISOString(),
+        issueNumber,
+        status,
+        command,
+        prUrl,
+        commitUrl,
+        logFile: f.name,
+      };
+    });
+
+    res.json(results);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/projects/:id/oh-logs/:filename/raw — serve raw log file
+app.get("/api/projects/:id/oh-logs/:filename/raw", (req, res) => {
+  const { filename } = req.params;
+
+  // Security: validate filename pattern to prevent path traversal
+  if (!/^oh-resolve-[a-z0-9-]+\.log$/.test(filename)) {
+    return res.status(400).json({ error: "Invalid filename. Must match: oh-resolve-[a-z0-9-]+.log" });
+  }
+
+  const filePath = path.join("/var/log", filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "Log file not found" });
+  }
+
+  res.setHeader("Content-Type", "text/plain");
+  fs.createReadStream(filePath).pipe(res);
+});
+
+// ─── PROJECT MANAGEMENT ──────────────────────────────────────────────────────
+
+// PATCH /api/projects/:id — update project active status
+app.patch("/api/projects/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { active } = req.body;
+
+    if (typeof active !== "boolean") {
+      return res.status(400).json({ error: "active (boolean) required" });
+    }
+
+    const { rows } = await pool.query(`
+      INSERT INTO proto_projects (id, active, updated_at) VALUES ($1, $2, NOW())
+      ON CONFLICT (id) DO UPDATE SET active = $2, updated_at = NOW()
+      RETURNING *
+    `, [id, active]);
+
+    res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/projects/:id/active — check if project is active
+app.get("/api/projects/:id/active", async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM proto_projects WHERE id=$1", [req.params.id]);
+    if (rows.length === 0) {
+      // Not in table = active by default
+      return res.json({ id: req.params.id, active: true });
+    }
+    res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── STORIES SUMMARY ────────────────────────────────────────────────────────
+
+// GET /api/projects/:id/stories/summary — quick story counts
+app.get("/api/projects/:id/stories/summary", async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status='passed') as passed,
+        COUNT(*) FILTER (WHERE status='failed') as failed,
+        COUNT(*) FILTER (WHERE status='pending') as pending,
+        COUNT(*) FILTER (WHERE status='skipped') as skipped
+      FROM stories WHERE project_id=$1
+    `, [req.params.id]);
+
+    const r = rows[0];
+    res.json({
+      total: parseInt(r.total),
+      passed: parseInt(r.passed),
+      failed: parseInt(r.failed),
+      pending: parseInt(r.pending),
+      skipped: parseInt(r.skipped),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ─── START ────────────────────────────────────────────────────────────────────

@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# proto-smart-cron — Smart cron: create proto/proto-check issues based on run counts
+# Runs every 15 minutes via cron
+
+set -uo pipefail
+
+LOG="/var/log/proto-smart-cron.log"
+HUB_API="http://localhost:3901"
+COMMANDS_URL="https://proto.smartlaunchhub.com/api/commands"
+MAX_PARALLEL=25
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
+
+declare -A REPO_MAP=(
+  [p2ptax]="serter2069/p2ptax"
+  [avito-georgia]="serter2069/avito-georgia"
+  [chesstourism]="serter2069/chesstourism"
+  [daterabbit]="serter2069/date-rabbit"
+  [dressit]="serter2069/dressit"
+  [gun]="serter2069/gun"
+  [moto]="serter2069/moto-social"
+)
+
+ALL_REPOS=(
+  serter2069/p2ptax
+  serter2069/avito-georgia
+  serter2069/chesstourism
+  serter2069/date-rabbit
+  serter2069/dressit
+  serter2069/gun
+  serter2069/moto-social
+)
+
+count_running() {
+  local total=0
+  for repo in "${ALL_REPOS[@]}"; do
+    local r
+    r=$(gh issue list --repo "$repo" --label "oh:progress" --state open --json number --jq 'length' 2>/dev/null || echo 0)
+    total=$((total + r))
+  done
+  echo "$total"
+}
+
+create_issue_for() {
+  local project="$1"
+  local command="$2"
+  local repo="${REPO_MAP[$project]:-}"
+
+  if [ -z "$repo" ]; then
+    log "SKIP: unknown project $project"
+    return
+  fi
+
+  local title="${command}: ${project}"
+
+  local existing_ready
+  existing_ready=$(gh issue list --repo "$repo" --state open \
+    --label "oh:ready" --search "$title in:title" --json number --jq '.[0].number' 2>/dev/null || echo "")
+  local existing_progress
+  existing_progress=$(gh issue list --repo "$repo" --state open \
+    --label "oh:progress" --search "$title in:title" --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+  if [ -n "$existing_ready" ] || [ -n "$existing_progress" ]; then
+    log "SKIP: $repo — issue already open (ready=#${existing_ready:-} progress=#${existing_progress:-})"
+    return
+  fi
+
+  CMD_JSON=$(curl -sf "${COMMANDS_URL}/${command}" 2>/dev/null)
+  if [ -z "$CMD_JSON" ]; then
+    log "ERROR: could not fetch command ${command} from registry"
+    return
+  fi
+  CMD_CONTENT=$(echo "$CMD_JSON" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('content',''))" 2>/dev/null)
+
+  local body
+  body="$(printf '## Task\nRun %s on %s.\n\n/%s %s\n\n## Instructions\n\nSource: %s/%s\n\n---\n\n%s' \
+    "$command" "$project" "$command" "$project" "$COMMANDS_URL" "$command" "$CMD_CONTENT")"
+
+  local issue_num
+  issue_num=$(gh issue create \
+    --repo "$repo" \
+    --title "$title" \
+    --body "$body" \
+    --label "oh:ready" \
+    2>/dev/null | grep -oP '[0-9]+$')
+
+  if [ -n "$issue_num" ]; then
+    log "CREATED: $repo#$issue_num — $title"
+  else
+    log "FAIL: could not create issue in $repo — $title"
+  fi
+}
+
+log "proto-smart-cron starting"
+
+NEEDS_WORK=$(curl -sf "${HUB_API}/api/runs/needs-work" 2>/dev/null)
+if [ -z "$NEEDS_WORK" ]; then
+  log "ERROR: could not reach proto-hub-api at ${HUB_API}"
+  exit 1
+fi
+
+COUNT=$(echo "$NEEDS_WORK" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d))" 2>/dev/null)
+log "needs-work: ${COUNT} entries"
+
+if [ "$COUNT" -eq 0 ]; then
+  log "All projects have enough runs. Nothing to do."
+  exit 0
+fi
+
+running=$(count_running)
+log "Currently running OH jobs: $running"
+
+while IFS=' ' read -r project command count; do
+  current_running=$(count_running)
+  if [ "$current_running" -ge "$MAX_PARALLEL" ]; then
+    log "LIMIT: $current_running jobs running (max $MAX_PARALLEL), stopping"
+    break
+  fi
+  # Check if project is active via hub-api
+  local active_resp
+  active_resp=$(curl -sf "${HUB_API}/api/projects/${project}/active" 2>/dev/null)
+  if [ -n "$active_resp" ]; then
+    local is_active
+    is_active=$(echo "$active_resp" | python3 -c "import json,sys; d=json.load(sys.stdin); print(str(d.get('active', True)).lower())" 2>/dev/null)
+    if [ "$is_active" = "false" ]; then
+      log "SKIP: $project is inactive"
+      continue
+    fi
+  fi
+
+  log "Processing: project=$project command=$command count=$count"
+  create_issue_for "$project" "$command"
+done < <(echo "$NEEDS_WORK" | python3 -c "
+import json, sys
+items = json.load(sys.stdin)
+for item in items:
+    print(item['project'] + ' ' + item['command'] + ' ' + str(item['count']))
+")
+
+log "proto-smart-cron done"

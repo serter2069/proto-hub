@@ -3,6 +3,7 @@ const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
 const { execSync, spawn } = require("child_process");
+const docsStore = require("./docs-store");
 
 const app = express();
 app.use(express.json());
@@ -731,6 +732,37 @@ app.get("/api/projects/:id/stories/summary", async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// ─── DOCS REGISTRY ──────────────────────────────────────────────────────────
+
+// List all docs (names + descriptions, no content)
+app.get("/api/docs", (req, res) => {
+  res.json(docsStore.list());
+});
+
+// Export full dump (all docs with content)
+app.get("/api/docs/export", (req, res) => {
+  const data = docsStore.list().map(d => ({ ...d, ...docsStore.get(d.name) }));
+  res.setHeader("Content-Disposition", 'attachment; filename="docs-backup.json"');
+  res.json(data);
+});
+
+// Get single doc (full content)
+app.get("/api/docs/:name", (req, res) => {
+  const doc = docsStore.get(req.params.name);
+  if (!doc) return res.status(404).json({ error: "Doc not found" });
+  res.json({ name: req.params.name, ...doc });
+});
+
+// Create or update a doc
+app.put("/api/docs/:name", (req, res) => {
+  const { content, description } = req.body || {};
+  if (typeof content === "undefined" && typeof description === "undefined") {
+    return res.status(400).json({ error: "Missing body: content or description required" });
+  }
+  const doc = docsStore.upsert(req.params.name, { content, description });
+  res.json({ name: req.params.name, ...doc });
 });
 
 // ─── START ────────────────────────────────────────────────────────────────────

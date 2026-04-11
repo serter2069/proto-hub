@@ -93,6 +93,50 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 .pulse { animation: pulse 1.5s ease-in-out infinite; }
 
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; max-width: 1200px; }
+.tab-btn { padding: 8px 20px; font-size: 14px; font-weight: 600; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; transition: all 0.15s; color: #374151; }
+.tab-btn:hover { background: #f3f4f6; }
+.tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Docs */
+.docs-search { width: 100%; max-width: 400px; padding: 8px 14px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; margin-bottom: 16px; }
+.docs-search:focus { border-color: #2563eb; }
+.docs-layout { display: flex; gap: 20px; max-width: 1200px; }
+.docs-list { width: 320px; flex-shrink: 0; max-height: 70vh; overflow-y: auto; }
+.docs-detail { flex: 1; min-width: 0; }
+.doc-item { padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; background: #fff; }
+.doc-item:hover { border-color: #93c5fd; background: #f9fafb; }
+.doc-item.selected { border-color: #2563eb; background: #eff6ff; }
+.doc-item-name { font-size: 14px; font-weight: 600; color: #111; }
+.doc-item-desc { font-size: 12px; color: #666; margin-top: 2px; }
+.doc-item-date { font-size: 11px; color: #999; margin-top: 4px; }
+.doc-view { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; }
+.doc-view h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.doc-view-desc { font-size: 13px; color: #666; margin-bottom: 12px; }
+.doc-view-date { font-size: 11px; color: #999; margin-bottom: 16px; }
+.doc-content { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.6; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; max-height: 50vh; overflow-y: auto; }
+.doc-actions { display: flex; gap: 8px; margin-bottom: 16px; }
+.doc-btn { padding: 6px 16px; font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+.doc-btn-edit { background: #2563eb; color: #fff; }
+.doc-btn-edit:hover { background: #1d4ed8; }
+.doc-btn-save { background: #16a34a; color: #fff; }
+.doc-btn-save:hover { background: #15803d; }
+.doc-btn-cancel { background: #e5e7eb; color: #374151; }
+.doc-btn-cancel:hover { background: #d1d5db; }
+.doc-btn-new { background: #2563eb; color: #fff; }
+.doc-btn-new:hover { background: #1d4ed8; }
+.doc-edit-form { display: flex; flex-direction: column; gap: 10px; }
+.doc-edit-form label { font-size: 12px; font-weight: 600; color: #374151; }
+.doc-edit-form input { font-size: 13px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
+.doc-edit-form input:focus { border-color: #2563eb; }
+.doc-edit-form textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; min-height: 300px; resize: vertical; line-height: 1.5; }
+.doc-edit-form textarea:focus { border-color: #2563eb; }
+.doc-empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+@media (max-width: 768px) { .docs-layout { flex-direction: column; } .docs-list { width: 100%; max-height: 40vh; } }
+
 /* Stories Modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; }
 .modal-backdrop.open { display: flex; }
@@ -169,12 +213,31 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 <h1>Proto Hub</h1>
 <p class="subtitle">All project prototypes — staging iframes, no login required</p>
 
-<div class="cron-monitor" id="cronMonitor">
-  <h2>Automation Status</h2>
-  <div id="cronContent" class="loading pulse">Loading...</div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('projects')">Projects</button>
+  <button class="tab-btn" onclick="switchTab('docs')">Docs</button>
 </div>
 
-<div class="grid" id="projectGrid"></div>
+<div class="tab-panel active" id="panel-projects">
+  <div class="cron-monitor" id="cronMonitor">
+    <h2>Automation Status</h2>
+    <div id="cronContent" class="loading pulse">Loading...</div>
+  </div>
+  <div class="grid" id="projectGrid"></div>
+</div>
+
+<div class="tab-panel" id="panel-docs">
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;max-width:1200px">
+    <input class="docs-search" id="docsSearch" placeholder="Search docs..." oninput="filterDocs()">
+    <button class="doc-btn doc-btn-new" onclick="newDoc()">+ New Doc</button>
+  </div>
+  <div class="docs-layout">
+    <div class="docs-list" id="docsList"></div>
+    <div class="docs-detail" id="docsDetail">
+      <div class="doc-empty">Select a doc from the list</div>
+    </div>
+  </div>
+</div>
 <div class="toast-container" id="toasts"></div>
 
 <div class="modal-backdrop" id="storiesModal" onclick="if(event.target===this)closeStories()">
@@ -800,6 +863,151 @@ function recalcSummary() {
   var s = { total: storiesState.stories.length, passed: 0, failed: 0, pending: 0, skipped: 0 };
   storiesState.stories.forEach(function(st) { if (s[st.status] !== undefined) s[st.status]++; });
   storiesState.summary = s;
+}
+
+// --- Tabs ---
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelector('.tab-btn[onclick*="' + tab + '"]').classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'docs' && !docsState.loaded) loadDocs();
+}
+
+// --- Docs ---
+var docsState = { docs: [], loaded: false, selected: null, editing: false };
+
+async function loadDocs() {
+  try {
+    var data = await apiFetch('/docs');
+    docsState.docs = data.sort(function(a, b) { return a.name.localeCompare(b.name); });
+    docsState.loaded = true;
+    renderDocsList();
+  } catch (e) {
+    document.getElementById('docsList').innerHTML = '<div class="doc-empty">Error loading docs</div>';
+  }
+}
+
+function filterDocs() {
+  renderDocsList();
+}
+
+function renderDocsList() {
+  var q = (document.getElementById('docsSearch').value || '').toLowerCase();
+  var list = docsState.docs.filter(function(d) {
+    return d.name.toLowerCase().includes(q) || (d.description || '').toLowerCase().includes(q);
+  });
+  if (list.length === 0) {
+    document.getElementById('docsList').innerHTML = '<div class="doc-empty">' + (docsState.docs.length === 0 ? 'No docs yet' : 'No matching docs') + '</div>';
+    return;
+  }
+  var html = '';
+  list.forEach(function(d) {
+    var sel = docsState.selected === d.name ? ' selected' : '';
+    var date = d.updated_at ? new Date(d.updated_at).toLocaleString() : '---';
+    html += '<div class="doc-item' + sel + '" onclick="selectDoc(\'' + esc(d.name).replace(/'/g, "\\'") + '\')">' +
+      '<div class="doc-item-name">' + esc(d.name) + '</div>' +
+      (d.description ? '<div class="doc-item-desc">' + esc(d.description) + '</div>' : '') +
+      '<div class="doc-item-date">' + date + '</div>' +
+    '</div>';
+  });
+  document.getElementById('docsList').innerHTML = html;
+}
+
+async function selectDoc(name) {
+  docsState.selected = name;
+  docsState.editing = false;
+  renderDocsList();
+  document.getElementById('docsDetail').innerHTML = '<div class="doc-empty pulse">Loading...</div>';
+  try {
+    var doc = await apiFetch('/docs/' + encodeURIComponent(name));
+    renderDocDetail(doc);
+  } catch (e) {
+    document.getElementById('docsDetail').innerHTML = '<div class="doc-empty">Error loading doc</div>';
+  }
+}
+
+function renderDocDetail(doc) {
+  var date = doc.updated_at ? new Date(doc.updated_at).toLocaleString() : '---';
+  document.getElementById('docsDetail').innerHTML =
+    '<div class="doc-view">' +
+      '<h2>' + esc(doc.name) + '</h2>' +
+      (doc.description ? '<div class="doc-view-desc">' + esc(doc.description) + '</div>' : '') +
+      '<div class="doc-view-date">Updated: ' + date + '</div>' +
+      '<div class="doc-actions">' +
+        '<button class="doc-btn doc-btn-edit" onclick="editDoc(\'' + esc(doc.name).replace(/'/g, "\\'") + '\')">Edit</button>' +
+      '</div>' +
+      '<div class="doc-content">' + esc(doc.content || '') + '</div>' +
+    '</div>';
+}
+
+async function editDoc(name) {
+  docsState.editing = true;
+  var doc;
+  try {
+    doc = await apiFetch('/docs/' + encodeURIComponent(name));
+  } catch (e) {
+    doc = { name: name, content: '', description: '' };
+  }
+  renderDocEditForm(doc);
+}
+
+function newDoc() {
+  docsState.editing = true;
+  docsState.selected = null;
+  renderDocsList();
+  renderDocEditForm({ name: '', content: '', description: '' });
+}
+
+function renderDocEditForm(doc) {
+  var isNew = !doc.name;
+  document.getElementById('docsDetail').innerHTML =
+    '<div class="doc-view">' +
+      '<div class="doc-edit-form">' +
+        '<label>Name' + (isNew ? '' : ' (read-only)') + '</label>' +
+        '<input type="text" id="docEditName" value="' + esc(doc.name || '').replace(/"/g, '&quot;') + '"' + (isNew ? '' : ' readonly style="background:#f3f4f6"') + '>' +
+        '<label>Description</label>' +
+        '<input type="text" id="docEditDesc" value="' + esc(doc.description || '').replace(/"/g, '&quot;') + '" placeholder="Short description...">' +
+        '<label>Content</label>' +
+        '<textarea id="docEditContent" placeholder="Document content (markdown)...">' + esc(doc.content || '') + '</textarea>' +
+        '<div class="doc-actions">' +
+          '<button class="doc-btn doc-btn-save" onclick="saveDoc()">Save</button>' +
+          '<button class="doc-btn doc-btn-cancel" onclick="cancelDocEdit()">Cancel</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+async function saveDoc() {
+  var name = document.getElementById('docEditName').value.trim();
+  var desc = document.getElementById('docEditDesc').value.trim();
+  var content = document.getElementById('docEditContent').value;
+  if (!name) { toast('Name is required', true); return; }
+
+  try {
+    await fetch(API + '/docs/' + encodeURIComponent(name), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: content, description: desc })
+    }).then(function(r) { if (!r.ok) throw new Error('Failed'); return r.json(); });
+    toast('Doc saved: ' + name);
+    docsState.selected = name;
+    docsState.editing = false;
+    docsState.loaded = false;
+    await loadDocs();
+    selectDoc(name);
+  } catch (e) {
+    toast('Failed to save doc', true);
+  }
+}
+
+function cancelDocEdit() {
+  docsState.editing = false;
+  if (docsState.selected) {
+    selectDoc(docsState.selected);
+  } else {
+    document.getElementById('docsDetail').innerHTML = '<div class="doc-empty">Select a doc from the list</div>';
+  }
 }
 
 // --- Init ---

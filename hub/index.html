@@ -91,6 +91,60 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .loading { color: #aaa; font-size: 12px; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 .pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+/* Stories Modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; }
+.modal-backdrop.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; width: 95%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 12px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+.modal-header h2 { font-size: 18px; font-weight: 700; }
+.modal-close { width: 32px; height: 32px; border: none; background: #f3f4f6; border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666; }
+.modal-close:hover { background: #e5e7eb; }
+.modal-summary { display: flex; gap: 12px; padding: 12px 24px; flex-wrap: wrap; flex-shrink: 0; }
+.summary-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
+.summary-badge.total { background: #f3f4f6; color: #374151; }
+.summary-badge.passed { background: #dcfce7; color: #16a34a; }
+.summary-badge.failed { background: #fef2f2; color: #dc2626; }
+.summary-badge.pending { background: #fefce8; color: #ca8a04; }
+.summary-badge.skipped { background: #f3f4f6; color: #6b7280; }
+.modal-filters { display: flex; gap: 6px; padding: 0 24px 12px; flex-shrink: 0; flex-wrap: wrap; }
+.filter-tab { padding: 5px 14px; font-size: 12px; font-weight: 600; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; transition: all 0.15s; }
+.filter-tab:hover { background: #f3f4f6; }
+.filter-tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+.modal-body { overflow-y: auto; padding: 12px 24px 24px; flex: 1; }
+.story-item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+.story-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+.story-id { font-size: 12px; color: #999; font-weight: 600; }
+.story-page { font-size: 11px; color: #2563eb; background: #eff6ff; padding: 1px 6px; border-radius: 3px; }
+.story-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.story-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #666; margin-bottom: 8px; flex-wrap: wrap; }
+.story-role { font-size: 11px; font-weight: 600; color: #6b7280; background: #f3f4f6; padding: 1px 6px; border-radius: 3px; }
+.status-badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px; cursor: pointer; position: relative; user-select: none; }
+.status-badge.passed { background: #dcfce7; color: #16a34a; }
+.status-badge.failed { background: #fef2f2; color: #dc2626; }
+.status-badge.pending { background: #fefce8; color: #ca8a04; }
+.status-badge.skipped { background: #f3f4f6; color: #6b7280; }
+.status-badge:hover { opacity: 0.85; }
+.status-dropdown { position: absolute; top: 100%; left: 0; margin-top: 4px; background: #fff; border: 1px solid #d1d5db; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; overflow: hidden; }
+.status-option { padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.status-option:hover { background: #f3f4f6; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.status-dot.passed { background: #16a34a; } .status-dot.failed { background: #dc2626; } .status-dot.skipped { background: #9ca3af; }
+.failure-input { display: flex; gap: 6px; margin-top: 8px; }
+.failure-input input { flex: 1; font-size: 12px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
+.failure-input input:focus { border-color: #2563eb; }
+.failure-input button { padding: 6px 12px; font-size: 11px; font-weight: 600; background: #dc2626; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.failure-input button:hover { background: #b91c1c; }
+.story-details { font-size: 12px; color: #555; }
+.story-details summary { cursor: pointer; color: #2563eb; font-weight: 600; margin-bottom: 4px; }
+.story-steps { margin: 4px 0 0 16px; list-style: decimal; } .story-steps li { margin-bottom: 2px; }
+.story-expected { margin-top: 6px; color: #374151; } .story-expected strong { color: #111; }
+.story-tested { font-size: 11px; color: #888; margin-top: 4px; }
+.story-failure { font-size: 12px; color: #dc2626; margin-top: 4px; font-style: italic; }
+.story-empty { text-align: center; padding: 40px 20px; color: #999; font-size: 14px; }
+.manage-btn { display: inline-block; font-size: 11px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 5px; padding: 2px 8px; cursor: pointer; margin-left: 8px; transition: all 0.15s; }
+.manage-btn:hover { background: #dbeafe; }
+@media (max-width: 640px) { .modal { width: 100%; max-width: 100%; max-height: 100vh; border-radius: 0; } }
 </style>
 </head>
 <body>
@@ -105,6 +159,18 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 
 <div class="grid" id="projectGrid"></div>
 <div class="toast-container" id="toasts"></div>
+
+<div class="modal-backdrop" id="storiesModal" onclick="if(event.target===this)closeStories()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="storiesTitle">Stories</h2>
+      <button class="modal-close" onclick="closeStories()">&times;</button>
+    </div>
+    <div class="modal-summary" id="storiesSummary"></div>
+    <div class="modal-filters" id="storiesFilters"></div>
+    <div class="modal-body" id="storiesBody"></div>
+  </div>
+</div>
 
 <script>
 const API = '/hub/api';
@@ -223,7 +289,9 @@ function renderCard(p) {
       '<span class="chip ' + chipColor(proto) + '" onclick="event.preventDefault();event.stopPropagation();editChip(\'' + p.id + '\',\'proto\',' + proto + ',this)">proto ' + proto + '/10</span>' +
       '<span class="chip ' + chipColor(check) + '" onclick="event.preventDefault();event.stopPropagation();editChip(\'' + p.id + '\',\'proto-check\',' + check + ',this)">proto-check ' + check + '/10</span>' +
     '</div>' +
-    '<div class="stories" id="stories-' + p.id + '">' + storiesText + '</div>' +
+    '<div class="stories" id="stories-' + p.id + '">' + storiesText +
+      '<span class="manage-btn" onclick="event.preventDefault();event.stopPropagation();openStories(\'' + p.id + '\',\'' + p.name + '\')">Manage</span>' +
+    '</div>' +
     '<div class="cmd-buttons">' +
       '<button class="cmd-btn" onclick="event.preventDefault();event.stopPropagation();runCmd(\'' + p.id + '\',\'proto\',this)">Run /proto<span class="spinner"></span></button>' +
       '<button class="cmd-btn" onclick="event.preventDefault();event.stopPropagation();runCmd(\'' + p.id + '\',\'proto-check\',this)">Run /proto-check<span class="spinner"></span></button>' +
@@ -376,6 +444,228 @@ function editChip(projectId, command, currentValue, chipEl) {
   });
   input.addEventListener('blur', save);
   input.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); });
+}
+
+// --- Stories Modal ---
+var storiesState = { projectId: null, projectName: '', stories: [], filter: 'all', summary: {} };
+
+function openStories(projectId, projectName) {
+  storiesState.projectId = projectId;
+  storiesState.projectName = projectName;
+  storiesState.filter = 'all';
+  document.getElementById('storiesTitle').textContent = projectName + ' \u2014 User Stories';
+  document.getElementById('storiesBody').innerHTML = '<div class="story-empty pulse">Loading stories...</div>';
+  document.getElementById('storiesSummary').innerHTML = '';
+  document.getElementById('storiesFilters').innerHTML = '';
+  document.getElementById('storiesModal').classList.add('open');
+  document.addEventListener('keydown', storiesEscHandler);
+  fetchStories();
+}
+
+function closeStories() {
+  document.getElementById('storiesModal').classList.remove('open');
+  document.removeEventListener('keydown', storiesEscHandler);
+  storiesState.projectId = null;
+}
+
+function storiesEscHandler(e) { if (e.key === 'Escape') closeStories(); }
+
+async function fetchStories() {
+  try {
+    var data = await apiFetch('/projects/' + storiesState.projectId + '/stories');
+    storiesState.stories = data;
+    var s = { total: data.length, passed: 0, failed: 0, pending: 0, skipped: 0 };
+    data.forEach(function(st) { if (s[st.status] !== undefined) s[st.status]++; });
+    storiesState.summary = s;
+    state.stories[storiesState.projectId] = s;
+    renderStoriesSummary();
+    renderStoriesFilters();
+    renderStoriesList();
+    renderGrid();
+  } catch (e) {
+    document.getElementById('storiesBody').innerHTML = '<div class="story-empty">Error loading stories</div>';
+  }
+}
+
+function renderStoriesSummary() {
+  var s = storiesState.summary;
+  document.getElementById('storiesSummary').innerHTML =
+    '<span class="summary-badge total">Total: ' + s.total + '</span>' +
+    '<span class="summary-badge passed">Passed: ' + s.passed + '</span>' +
+    '<span class="summary-badge failed">Failed: ' + s.failed + '</span>' +
+    '<span class="summary-badge pending">Pending: ' + s.pending + '</span>' +
+    '<span class="summary-badge skipped">Skipped: ' + s.skipped + '</span>';
+}
+
+function renderStoriesFilters() {
+  var tabs = ['all', 'pending', 'passed', 'failed', 'skipped'];
+  var html = '';
+  tabs.forEach(function(t) {
+    html += '<button class="filter-tab' + (storiesState.filter === t ? ' active' : '') +
+      '" onclick="setStoriesFilter(\'' + t + '\')">' + t.charAt(0).toUpperCase() + t.slice(1) + '</button>';
+  });
+  document.getElementById('storiesFilters').innerHTML = html;
+}
+
+function setStoriesFilter(f) {
+  storiesState.filter = f;
+  renderStoriesFilters();
+  renderStoriesList();
+}
+
+function renderStoriesList() {
+  var list = storiesState.stories;
+  if (storiesState.filter !== 'all') {
+    list = list.filter(function(s) { return s.status === storiesState.filter; });
+  }
+  if (list.length === 0) {
+    document.getElementById('storiesBody').innerHTML =
+      '<div class="story-empty">' + (storiesState.stories.length === 0 ? 'No stories yet' : 'No ' + storiesState.filter + ' stories') + '</div>';
+    return;
+  }
+  var html = '';
+  list.forEach(function(s) {
+    var stepsHtml = '';
+    if (Array.isArray(s.steps) && s.steps.length > 0) {
+      stepsHtml = '<details class="story-details"><summary>Steps & Expected</summary>' +
+        '<ol class="story-steps">' + s.steps.map(function(st) { return '<li>' + esc(st) + '</li>'; }).join('') + '</ol>' +
+        '<div class="story-expected"><strong>Expected:</strong> ' + esc(s.expected || '---') + '</div></details>';
+    }
+    var testedHtml = '';
+    if (s.tested_by) {
+      testedHtml = '<div class="story-tested">Tested by ' + esc(s.tested_by) + (s.tested_at ? ' at ' + fmtTime(s.tested_at) : '') + '</div>';
+    }
+    var failHtml = '';
+    if (s.status === 'failed' && s.failure_reason) {
+      failHtml = '<div class="story-failure">Reason: ' + esc(s.failure_reason) + '</div>';
+    }
+
+    html +=
+      '<div class="story-item" id="story-' + s.id + '">' +
+        '<div class="story-top">' +
+          '<div><span class="story-id">#' + s.id + '</span> <span class="story-page">' + esc(s.page_id) + '</span></div>' +
+          '<span class="status-badge ' + s.status + '" onclick="toggleStatusDropdown(event,' + s.id + ')">' +
+            s.status.toUpperCase() + ' \u25BE' +
+          '</span>' +
+        '</div>' +
+        '<div class="story-title">' + esc(s.title) + '</div>' +
+        '<div class="story-meta"><span class="story-role">' + esc(s.role || '---') + '</span></div>' +
+        stepsHtml + testedHtml + failHtml +
+        '<div id="failure-input-' + s.id + '"></div>' +
+      '</div>';
+  });
+  document.getElementById('storiesBody').innerHTML = html;
+}
+
+function esc(str) {
+  var d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function toggleStatusDropdown(event, storyId) {
+  event.stopPropagation();
+  var badge = event.currentTarget;
+  var existing = badge.querySelector('.status-dropdown');
+  // close any open dropdowns
+  document.querySelectorAll('.status-dropdown').forEach(function(d) { d.remove(); });
+  if (existing) return;
+
+  var dd = document.createElement('div');
+  dd.className = 'status-dropdown';
+  ['passed', 'failed', 'skipped'].forEach(function(opt) {
+    var o = document.createElement('div');
+    o.className = 'status-option';
+    o.innerHTML = '<span class="status-dot ' + opt + '"></span>' + opt.charAt(0).toUpperCase() + opt.slice(1);
+    o.onclick = function(e) {
+      e.stopPropagation();
+      dd.remove();
+      if (opt === 'failed') {
+        showFailureInput(storyId);
+      } else {
+        updateStoryStatus(storyId, opt);
+      }
+    };
+    dd.appendChild(o);
+  });
+  badge.appendChild(dd);
+
+  function closeDropdown(e) {
+    if (!dd.contains(e.target)) {
+      dd.remove();
+      document.removeEventListener('click', closeDropdown);
+    }
+  }
+  setTimeout(function() { document.addEventListener('click', closeDropdown); }, 0);
+}
+
+function showFailureInput(storyId) {
+  var container = document.getElementById('failure-input-' + storyId);
+  if (!container) return;
+  container.innerHTML =
+    '<div class="failure-input">' +
+      '<input type="text" id="fail-reason-' + storyId + '" placeholder="Failure reason...">' +
+      '<button onclick="submitFailure(' + storyId + ')">Mark Failed</button>' +
+    '</div>';
+  var inp = document.getElementById('fail-reason-' + storyId);
+  inp.focus();
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitFailure(storyId); }
+    if (e.key === 'Escape') { e.preventDefault(); container.innerHTML = ''; }
+  });
+}
+
+function submitFailure(storyId) {
+  var inp = document.getElementById('fail-reason-' + storyId);
+  var reason = inp ? inp.value.trim() : '';
+  updateStoryStatus(storyId, 'failed', reason || 'No reason provided');
+}
+
+async function updateStoryStatus(storyId, status, failureReason) {
+  var body = { status: status, tested_by: 'user' };
+  if (failureReason) body.failure_reason = failureReason;
+
+  // find old status for revert
+  var story = storiesState.stories.find(function(s) { return s.id === storyId; });
+  var oldStatus = story ? story.status : null;
+
+  // optimistic update
+  if (story) {
+    story.status = status;
+    story.tested_by = 'user';
+    story.tested_at = new Date().toISOString();
+    if (failureReason) story.failure_reason = failureReason;
+  }
+  recalcSummary();
+  renderStoriesSummary();
+  renderStoriesList();
+
+  try {
+    var res = await fetch(API + '/stories/' + storyId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('Failed');
+    toast('Story #' + storyId + ' → ' + status);
+    // update main grid summary
+    state.stories[storiesState.projectId] = storiesState.summary;
+    renderGrid();
+  } catch (e) {
+    toast('Failed to update story #' + storyId, true);
+    if (story && oldStatus) {
+      story.status = oldStatus;
+      recalcSummary();
+      renderStoriesSummary();
+      renderStoriesList();
+    }
+  }
+}
+
+function recalcSummary() {
+  var s = { total: storiesState.stories.length, passed: 0, failed: 0, pending: 0, skipped: 0 };
+  storiesState.stories.forEach(function(st) { if (s[st.status] !== undefined) s[st.status]++; });
+  storiesState.summary = s;
 }
 
 // --- Init ---

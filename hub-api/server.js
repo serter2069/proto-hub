@@ -394,6 +394,24 @@ app.get("/api/stories/pending", async (req, res) => {
   res.json(rows);
 });
 
+// PUT /api/stories/:id — edit story content
+app.put("/api/stories/:id", async (req, res) => {
+  const { title, role, precondition, steps, expected } = req.body;
+  const { id } = req.params;
+  if (!title) return res.status(400).json({ error: "title is required" });
+  try {
+    const stepsArr = Array.isArray(steps) ? steps : (typeof steps === 'string' ? steps.split('\n').filter(Boolean) : []);
+    const result = await pool.query(
+      "UPDATE stories SET title=$1, role=$2, precondition=$3, steps=$4, expected=$5 WHERE id=$6 RETURNING *",
+      [title, role || null, precondition || null, stepsArr, expected || null, id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Story not found" });
+    res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // PATCH /api/stories/:id
 app.patch("/api/stories/:id", async (req, res) => {
   const { status, tested_by, failure_reason, output } = req.body;

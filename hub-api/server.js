@@ -822,6 +822,16 @@ app.post('/api/files', async (req, res) => {
     DO UPDATE SET content=$4, updated_at=NOW()
     RETURNING *
   `, [project_id, page_id || null, filename, content]);
+
+  // Broadcast file update to all WebSocket clients
+  broadcast({
+    type: 'file_updated',
+    project_id: project_id,
+    page_id: page_id || null,
+    filename: filename,
+    updated_at: r.rows[0].updated_at,
+  });
+
   res.json(r.rows[0]);
 });
 
@@ -871,5 +881,25 @@ app.post('/api/webhook/github', express.raw({ type: 'application/json' }), (req,
 
 // ─── START ────────────────────────────────────────────────────────────────────
 
+const { WebSocketServer } = require('ws');
+const http = require('http');
+
+const httpServer = http.createServer(app);
+const wss = new WebSocketServer({ server: httpServer });
+
+wss.on('connection', (ws) => {
+  console.log('[ws] client connected');
+  ws.send(JSON.stringify({ type: 'connected' }));
+});
+
+function broadcast(data) {
+  const msg = JSON.stringify(data);
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) client.send(msg);
+  });
+}
+
 const PORT = process.env.PORT || 3901;
-app.listen(PORT, () => console.log("proto-hub-api listening on port " + PORT));
+httpServer.listen(PORT, () => {
+  console.log(`proto-hub-api running on port ${PORT}`);
+});

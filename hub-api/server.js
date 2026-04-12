@@ -65,6 +65,19 @@ async function initTables() {
     )
   `);
 
+  // proto_files — component file storage per project/page
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS proto_files (
+      id SERIAL PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      page_id TEXT,
+      filename TEXT NOT NULL,
+      content TEXT NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(project_id, page_id, filename)
+    )
+  `);
+
   // proto_projects — active/inactive flag per project
   await pool.query(`
     CREATE TABLE IF NOT EXISTS proto_projects (
@@ -765,6 +778,58 @@ app.put("/api/docs/:name", (req, res) => {
   res.json({ name: req.params.name, ...doc });
 });
 
+// ─── PROTO FILES ─────────────────────────────────────────────────────────────
+
+// GET /api/files/export?project=p2ptax — must be before /api/files to avoid conflict
+app.get('/api/files/export', async (req, res) => {
+  const { project } = req.query;
+  if (!project) return res.status(400).json({ error: 'project required' });
+  const r = await pool.query(
+    'SELECT * FROM proto_files WHERE project_id=$1 ORDER BY page_id, filename',
+    [project]
+  );
+  res.json(r.rows);
+});
+
+// GET /api/files?project=p2ptax[&pageId=login-screen|&shared=true]
+app.get('/api/files', async (req, res) => {
+  const { project, pageId, shared } = req.query;
+  if (!project) return res.status(400).json({ error: 'project required' });
+  let q, params;
+  if (shared === 'true') {
+    q = 'SELECT * FROM proto_files WHERE project_id=$1 AND page_id IS NULL ORDER BY filename';
+    params = [project];
+  } else if (pageId) {
+    q = 'SELECT * FROM proto_files WHERE project_id=$1 AND page_id=$2 ORDER BY filename';
+    params = [project, pageId];
+  } else {
+    q = 'SELECT * FROM proto_files WHERE project_id=$1 ORDER BY page_id, filename';
+    params = [project];
+  }
+  const r = await pool.query(q, params);
+  res.json(r.rows);
+});
+
+// POST /api/files — upsert file
+app.post('/api/files', async (req, res) => {
+  const { project_id, page_id, filename, content } = req.body;
+  if (!project_id || !filename || content === undefined)
+    return res.status(400).json({ error: 'project_id, filename, content required' });
+  const r = await pool.query(`
+    INSERT INTO proto_files (project_id, page_id, filename, content, updated_at)
+    VALUES ($1, $2, $3, $4, NOW())
+    ON CONFLICT (project_id, page_id, filename)
+    DO UPDATE SET content=$4, updated_at=NOW()
+    RETURNING *
+  `, [project_id, page_id || null, filename, content]);
+  res.json(r.rows[0]);
+});
+
+// DELETE /api/files/:id
+app.delete('/api/files/:id', async (req, res) => {
+  await pool.query('DELETE FROM proto_files WHERE id=$1', [req.params.id]);
+  res.json({ ok: true });
+});
 // ─── GITHUB WEBHOOK ───────────────────────────────────────────────────────────
 
 app.post('/api/webhook/github', express.raw({ type: 'application/json' }), (req, res) => {

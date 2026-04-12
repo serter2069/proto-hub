@@ -765,6 +765,45 @@ app.put("/api/docs/:name", (req, res) => {
   res.json({ name: req.params.name, ...doc });
 });
 
+// ─── GITHUB WEBHOOK ───────────────────────────────────────────────────────────
+
+app.post('/api/webhook/github', express.raw({ type: 'application/json' }), (req, res) => {
+  const sig = req.headers['x-hub-signature-256'];
+  const secret = process.env.GITHUB_WEBHOOK_SECRET || 'proto-webhook-secret-2024';
+  const hmac = require('crypto').createHmac('sha256', secret);
+  const digest = 'sha256=' + hmac.update(req.body).digest('hex');
+
+  if (sig !== digest) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+
+  const payload = JSON.parse(req.body);
+  const branch = payload.ref?.replace('refs/heads/', '');
+  const repoName = payload.repository?.name;
+
+  // Map repo names to local dev directories
+  const DEV_DIRS = {
+    'p2ptax': '/var/www/p2ptax-dev',
+  };
+
+  const devDir = DEV_DIRS[repoName];
+  if (!devDir || branch !== 'development') {
+    return res.json({ ok: true, skipped: true, reason: `branch=${branch}, repo=${repoName}` });
+  }
+
+  res.json({ ok: true, branch, repo: repoName });
+
+  // Run git pull async (don't block response)
+  const { exec } = require('child_process');
+  exec(`cd ${devDir} && git pull origin development`, (err, stdout, stderr) => {
+    if (err) {
+      console.error(`[webhook] git pull failed for ${repoName}:`, stderr);
+    } else {
+      console.log(`[webhook] git pull success for ${repoName}:`, stdout.trim());
+    }
+  });
+});
+
 // ─── START ────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3901;

@@ -879,6 +879,88 @@ app.post('/api/webhook/github', express.raw({ type: 'application/json' }), (req,
   });
 });
 
+// ─── OPENHANDS DASHBOARD ──────────────────────────────────────────────────────
+
+function ghFetch(path) {
+  return new Promise((resolve, reject) => {
+    const https = require('https');
+    const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '';
+    const options = {
+      hostname: 'api.github.com',
+      path: path,
+      headers: {
+        'User-Agent': 'proto-hub',
+        'Accept': 'application/vnd.github.v3+json',
+        ...(token ? { 'Authorization': `token ${token}` } : {})
+      }
+    };
+    const req = https.get(options, (res) => {
+      let data = '';
+      res.on('data', d => data += d);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch (e) { reject(new Error('Invalid JSON: ' + data.slice(0, 100))); }
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(10000, () => { req.destroy(); reject(new Error('GitHub API timeout')); });
+  });
+}
+
+function mapIssue(item) {
+  const repoUrl = item.repository_url || '';
+  const repo = repoUrl.split('/').slice(-2).join('/');
+  return {
+    id: item.number,
+    title: item.title,
+    repo: repo,
+    repoShort: repoUrl.split('/').pop() || '',
+    url: item.html_url,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    labels: (item.labels || []).map(l => l.name),
+  };
+}
+
+app.get('/api/openhands/issues', async (req, res) => {
+  try {
+    const labels = ['oh:ready', 'oh:progress', 'oh:done', 'oh:failed', 'oh:abandoned'];
+    const results = {};
+
+    for (const label of labels) {
+      try {
+        const data = await ghFetch(`/search/issues?q=is:issue+label:${encodeURIComponent(label)}+org:serter2069&sort=updated&order=desc&per_page=30`);
+        results[label] = (data.items || []).map(mapIssue);
+      } catch (e) {
+        results[label] = [];
+      }
+    }
+
+    res.json(results);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/openhands/log', (req, res) => {
+  try {
+    const lines = execSync('tail -100 /var/log/oh-watcher.log', { encoding: 'utf8', timeout: 5000 });
+    res.json({ lines: lines.split('\n').filter(Boolean).reverse() });
+  } catch (e) {
+    res.json({ lines: [] });
+  }
+});
+
+app.get('/api/openhands/containers', (req, res) => {
+  try {
+    const out = execSync('docker ps --filter "name=openhands" --format "{{.Names}}" 2>/dev/null || echo ""', { encoding: 'utf8', timeout: 5000 });
+    const containers = out.split('\n').filter(Boolean);
+    res.json({ count: containers.length, containers });
+  } catch (e) {
+    res.json({ count: 0, containers: [] });
+  }
+});
+
 // ─── START ────────────────────────────────────────────────────────────────────
 
 const { WebSocketServer } = require('ws');

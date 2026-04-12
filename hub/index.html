@@ -206,6 +206,47 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .manage-btn { display: inline-block; font-size: 11px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 5px; padding: 2px 8px; cursor: pointer; margin-left: 8px; transition: all 0.15s; }
 .manage-btn:hover { background: #dbeafe; }
 @media (max-width: 640px) { .modal { width: 100%; max-width: 100%; max-height: 100vh; border-radius: 0; } }
+
+/* OpenHands Dashboard */
+.oh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-width: 1200px; margin-bottom: 24px; }
+.oh-stat { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px 20px; text-align: center; }
+.oh-stat-num { font-size: 32px; font-weight: 700; }
+.oh-stat-label { font-size: 12px; color: #666; margin-top: 4px; }
+.oh-stat.queue .oh-stat-num { color: #ca8a04; }
+.oh-stat.running .oh-stat-num { color: #2563eb; }
+.oh-stat.done .oh-stat-num { color: #16a34a; }
+.oh-stat.failed .oh-stat-num { color: #dc2626; }
+
+.oh-section { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px 24px; max-width: 1200px; margin-bottom: 16px; }
+.oh-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.oh-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.oh-dot.queue { background: #ca8a04; }
+.oh-dot.running { background: #2563eb; }
+.oh-dot.done { background: #16a34a; }
+.oh-dot.failed { background: #dc2626; }
+.oh-empty { font-size: 13px; color: #999; padding: 8px 0; }
+.oh-issue { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.oh-issue:last-child { border-bottom: none; }
+.oh-issue-repo { font-size: 11px; color: #999; min-width: 80px; flex-shrink: 0; }
+.oh-issue-num { font-size: 11px; font-weight: 600; color: #6b7280; min-width: 32px; }
+.oh-issue-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oh-issue-title a { color: #111; text-decoration: none; }
+.oh-issue-title a:hover { text-decoration: underline; color: #2563eb; }
+.oh-issue-age { font-size: 11px; color: #999; flex-shrink: 0; }
+.oh-refresh { font-size: 12px; color: #2563eb; cursor: pointer; user-select: none; }
+.oh-refresh:hover { text-decoration: underline; }
+.oh-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; max-width: 1200px; }
+.oh-header-title { font-size: 16px; font-weight: 600; }
+.oh-header-sub { font-size: 12px; color: #999; }
+.oh-containers { font-size: 13px; color: #2563eb; font-weight: 600; }
+
+.oh-log { background: #111; border-radius: 10px; padding: 16px; max-width: 1200px; max-height: 300px; overflow-y: auto; margin-bottom: 16px; }
+.oh-log-line { font-family: ui-monospace, monospace; font-size: 12px; color: #d1d5db; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+.oh-log-line.done { color: #86efac; }
+.oh-log-line.fail { color: #fca5a5; }
+.oh-log-line.start { color: #fde68a; }
+.oh-log-toggle { font-size: 12px; color: #2563eb; cursor: pointer; user-select: none; margin-bottom: 8px; display: inline-block; }
+.oh-log-toggle:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -216,6 +257,7 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('projects')">Projects</button>
   <button class="tab-btn" onclick="switchTab('docs')">Docs</button>
+  <button class="tab-btn" onclick="switchTab('openhands')">OpenHands</button>
 </div>
 
 <div class="tab-panel active" id="panel-projects">
@@ -238,6 +280,52 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
     </div>
   </div>
 </div>
+
+<div class="tab-panel" id="panel-openhands">
+  <div class="oh-header">
+    <div>
+      <div class="oh-header-title">OpenHands Monitor</div>
+      <div class="oh-header-sub" id="ohLastRefresh">Loading...</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="oh-containers" id="ohContainers"></div>
+      <span class="oh-refresh" onclick="loadOpenHands()">&#8635; Refresh</span>
+    </div>
+  </div>
+
+  <div class="oh-grid">
+    <div class="oh-stat queue"><div class="oh-stat-num" id="ohCountQueue">&mdash;</div><div class="oh-stat-label">In Queue</div></div>
+    <div class="oh-stat running"><div class="oh-stat-num" id="ohCountRunning">&mdash;</div><div class="oh-stat-label">Running</div></div>
+    <div class="oh-stat done"><div class="oh-stat-num" id="ohCountDone">&mdash;</div><div class="oh-stat-label">Done (recent)</div></div>
+    <div class="oh-stat failed"><div class="oh-stat-num" id="ohCountFailed">&mdash;</div><div class="oh-stat-label">Failed (recent)</div></div>
+  </div>
+
+  <div class="oh-section">
+    <h3><span class="oh-dot running"></span> Running <small id="ohRunningNote" style="font-size:11px;color:#999;font-weight:400"></small></h3>
+    <div id="ohRunning"><div class="oh-empty pulse">Loading...</div></div>
+  </div>
+
+  <div class="oh-section">
+    <h3><span class="oh-dot queue"></span> Queue (oh:ready)</h3>
+    <div id="ohQueue"><div class="oh-empty pulse">Loading...</div></div>
+  </div>
+
+  <div class="oh-section">
+    <h3><span class="oh-dot done"></span> Recently Done</h3>
+    <div id="ohDone"><div class="oh-empty pulse">Loading...</div></div>
+  </div>
+
+  <div class="oh-section">
+    <h3><span class="oh-dot failed"></span> Failed / Abandoned</h3>
+    <div id="ohFailed"><div class="oh-empty pulse">Loading...</div></div>
+  </div>
+
+  <div>
+    <span class="oh-log-toggle" onclick="toggleOhLog()">&#9660; Live Log (oh-watcher)</span>
+    <div class="oh-log" id="ohLog" style="display:none"><div class="oh-empty" style="color:#666">Click to load log</div></div>
+  </div>
+</div>
+
 <div class="toast-container" id="toasts"></div>
 
 <div class="modal-backdrop" id="storiesModal" onclick="if(event.target===this)closeStories()">
@@ -1032,6 +1120,112 @@ async function init() {
     }).catch(function() {});
   });
 }
+
+// --- OpenHands Dashboard ---
+var ohState = { loaded: false, logVisible: false, refreshTimer: null };
+
+function ohAge(ts) {
+  if (!ts) return '';
+  var diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  if (diff < 60) return diff + 's ago';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function renderOhIssues(containerId, items, emptyMsg) {
+  var el = document.getElementById(containerId);
+  if (!items || items.length === 0) {
+    el.innerHTML = '<div class="oh-empty">' + emptyMsg + '</div>';
+    return;
+  }
+  var html = '';
+  items.slice(0, 20).forEach(function(i) {
+    html += '<div class="oh-issue">' +
+      '<span class="oh-issue-repo">' + esc(i.repoShort || '') + '</span>' +
+      '<span class="oh-issue-num">#' + i.id + '</span>' +
+      '<span class="oh-issue-title"><a href="' + esc(i.url) + '" target="_blank">' + esc(i.title) + '</a></span>' +
+      '<span class="oh-issue-age">' + ohAge(i.updated_at) + '</span>' +
+    '</div>';
+  });
+  el.innerHTML = html;
+}
+
+async function loadOpenHands() {
+  document.getElementById('ohLastRefresh').textContent = 'Refreshing...';
+
+  // Load issues
+  try {
+    var data = await apiFetch('/openhands/issues');
+    var queue = data['oh:ready'] || [];
+    var running = data['oh:progress'] || [];
+    var done = data['oh:done'] || [];
+    var failed = (data['oh:failed'] || []).concat(data['oh:abandoned'] || []);
+
+    document.getElementById('ohCountQueue').textContent = queue.length;
+    document.getElementById('ohCountRunning').textContent = running.length;
+    document.getElementById('ohCountDone').textContent = done.length;
+    document.getElementById('ohCountFailed').textContent = failed.length;
+
+    renderOhIssues('ohQueue', queue, 'No issues in queue');
+    renderOhIssues('ohRunning', running, 'Nothing running right now');
+    renderOhIssues('ohDone', done.slice(0, 10), 'No recent completed tasks');
+    renderOhIssues('ohFailed', failed.slice(0, 10), 'No failed tasks');
+
+    document.getElementById('ohLastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    document.getElementById('ohLastRefresh').textContent = 'Error loading data';
+  }
+
+  // Load container count
+  try {
+    var cnt = await apiFetch('/openhands/containers');
+    document.getElementById('ohContainers').textContent = cnt.count + '/25 containers';
+  } catch (e) {
+    document.getElementById('ohContainers').textContent = '';
+  }
+
+  // Refresh log if visible
+  if (ohState.logVisible) loadOhLog();
+}
+
+async function loadOhLog() {
+  var el = document.getElementById('ohLog');
+  try {
+    var data = await apiFetch('/openhands/log');
+    var lines = data.lines || [];
+    if (lines.length === 0) {
+      el.innerHTML = '<div class="oh-log-line" style="color:#666">Log is empty</div>';
+      return;
+    }
+    var html = '';
+    lines.forEach(function(line) {
+      var cls = line.includes('DONE:') ? 'done' : line.includes('FAIL:') ? 'fail' : line.includes('START:') ? 'start' : '';
+      html += '<div class="oh-log-line' + (cls ? ' ' + cls : '') + '">' + esc(line) + '</div>';
+    });
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = '<div class="oh-log-line" style="color:#666">Error loading log</div>';
+  }
+}
+
+function toggleOhLog() {
+  var el = document.getElementById('ohLog');
+  ohState.logVisible = !ohState.logVisible;
+  el.style.display = ohState.logVisible ? 'block' : 'none';
+  if (ohState.logVisible) loadOhLog();
+}
+
+// Extend switchTab to handle openhands
+var _origSwitchTab = switchTab;
+switchTab = function(tab) {
+  _origSwitchTab(tab);
+  if (tab === 'openhands' && !ohState.loaded) {
+    ohState.loaded = true;
+    loadOpenHands();
+    ohState.refreshTimer = setInterval(loadOpenHands, 30000);
+  }
+};
 
 init();
 </script>

@@ -111,6 +111,26 @@ async function initTables() {
     )
   `);
 
+  // test_results — per-card functional/visual test outcomes
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS test_results (
+      id SERIAL PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES proto_projects(id) ON DELETE CASCADE,
+      card_id TEXT NOT NULL,
+      test_type TEXT NOT NULL CHECK (test_type IN ('functional', 'visual')),
+      status TEXT NOT NULL CHECK (status IN ('pass', 'fail', 'skip')),
+      evidence JSONB,
+      fail_reason TEXT,
+      issue_url TEXT,
+      cycle INTEGER DEFAULT 1,
+      tested_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS test_results_unique
+    ON test_results(project_id, card_id, test_type)
+  `);
+
   // Pre-populate known SA schema IDs
   await pool.query(`
     UPDATE proto_projects SET sa_schema_id = 'cmnw5361i000czmerbi780b2j' WHERE id = 'p2ptax' AND (sa_schema_id IS NULL OR sa_schema_id = '');
@@ -874,7 +894,7 @@ const STAGE_COMMANDS = {
   fix: [],         // manual (local)
   cicd: ['cicd'],
   development: ['audit'],
-  testing: ['dotest'],
+  testing: ['dotest', 'dotest-visual'],
   done: [],
 };
 const STAGE_RUNNERS = {
@@ -1128,6 +1148,99 @@ app.get("/api/projects/:id/active", async (req, res) => {
       return res.json({ id: req.params.id, active: true });
     }
     res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── TEST RESULTS ───────────────────────────────────────────────────────────
+
+// GET /hub/api/projects/:id/test-results — list test results with optional filters
+app.get("/hub/api/projects/:id/test-results", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type, status } = req.query;
+    let query = "SELECT * FROM test_results WHERE project_id=$1";
+    const params = [id];
+    if (type) { params.push(type); query += ` AND test_type=$${params.length}`; }
+    if (status) { params.push(status); query += ` AND status=$${params.length}`; }
+    query += " ORDER BY tested_at DESC";
+    const { rows } = await pool.query(query, params);
+
+    const pass = rows.filter(r => r.status === 'pass').length;
+    const fail = rows.filter(r => r.status === 'fail').length;
+    const skip = rows.filter(r => r.status === 'skip').length;
+
+    res.json({ total: rows.length, pass, fail, skip, results: rows });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /hub/api/projects/:id/test-results — upsert a test result
+app.post("/hub/api/projects/:id/test-results", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { card_id, test_type, status, evidence, fail_reason, issue_url, cycle } = req.body;
+    if (!card_id || !test_type || !status) {
+      return res.status(400).json({ error: "card_id, test_type, status required" });
+    }
+    const { rows } = await pool.query(`
+      INSERT INTO test_results (project_id, card_id, test_type, status, evidence, fail_reason, issue_url, cycle, tested_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      ON CONFLICT (project_id, card_id, test_type) DO UPDATE SET
+        status = EXCLUDED.status,
+        evidence = EXCLUDED.evidence,
+        fail_reason = EXCLUDED.fail_reason,
+        issue_url = EXCLUDED.issue_url,
+        cycle = EXCLUDED.cycle,
+        tested_at = NOW()
+      RETURNING *
+    `, [id, card_id, test_type, status, evidence ? JSON.stringify(evidence) : null, fail_reason || null, issue_url || null, cycle || 1]);
+    res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /hub/api/projects/:id/test-results/summary — quick summary by type
+app.get("/hub/api/projects/:id/test-results/summary", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query(`
+      SELECT test_type,
+        COUNT(*) FILTER (WHERE status='pass') as pass,
+        COUNT(*) FILTER (WHERE status='fail') as fail,
+        COUNT(*) FILTER (WHERE status='skip') as skip,
+        COUNT(*) as total
+      FROM test_results WHERE project_id=$1
+      GROUP BY test_type
+    `, [id]);
+
+    const summary = { functional: { pass: 0, fail: 0, skip: 0, total: 0 }, visual: { pass: 0, fail: 0, skip: 0, total: 0 } };
+    for (const r of rows) {
+      if (summary[r.test_type]) {
+        summary[r.test_type] = { pass: parseInt(r.pass), fail: parseInt(r.fail), skip: parseInt(r.skip), total: parseInt(r.total) };
+      }
+    }
+    summary.ready_for_visual = summary.functional.fail === 0 && summary.functional.total > 0;
+
+    res.json(summary);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /hub/api/projects/:id/test-results — clear test results
+app.delete("/hub/api/projects/:id/test-results", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type } = req.query;
+    let query = "DELETE FROM test_results WHERE project_id=$1";
+    const params = [id];
+    if (type) { params.push(type); query += ` AND test_type=$${params.length}`; }
+    const result = await pool.query(query, params);
+    res.json({ ok: true, deleted: result.rowCount });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

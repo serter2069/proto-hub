@@ -98,6 +98,8 @@ async function initTables() {
   await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS stage TEXT DEFAULT 'sa'`);
   await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS stage_updated_at TIMESTAMPTZ DEFAULT NOW()`);
   await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS paused BOOLEAN DEFAULT false`);
+  await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS name TEXT`);
+  await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS url TEXT`);
 
   // SDLC cycle targets per command
   await pool.query(`
@@ -713,7 +715,7 @@ app.get("/api/projects/:id/oh-logs/:filename/raw", (req, res) => {
 app.get("/api/projects", async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT pp.id, pp.active, pp.updated_at,
+      SELECT pp.id, pp.active, pp.name, pp.url, pp.updated_at,
         (SELECT COUNT(*) FROM pages WHERE project_id = pp.id) as page_count,
         (SELECT COUNT(*) FROM stories WHERE project_id = pp.id) as story_count
       FROM proto_projects pp
@@ -740,21 +742,57 @@ app.delete("/api/projects/:id", async (req, res) => {
   }
 });
 
-// PATCH /api/projects/:id — update project active status
-app.patch("/api/projects/:id", async (req, res) => {
+// POST /api/projects — create new project
+app.post("/api/projects", async (req, res) => {
   try {
-    const { id } = req.params;
-    const { active } = req.body;
-
-    if (typeof active !== "boolean") {
-      return res.status(400).json({ error: "active (boolean) required" });
+    const { id, name, url } = req.body;
+    if (!id || !/^[a-z0-9-]+$/.test(id)) {
+      return res.status(400).json({ error: "id required (lowercase alphanumeric with hyphens)" });
     }
 
     const { rows } = await pool.query(`
-      INSERT INTO proto_projects (id, active, updated_at) VALUES ($1, $2, NOW())
-      ON CONFLICT (id) DO UPDATE SET active = $2, updated_at = NOW()
+      INSERT INTO proto_projects (id, name, url, active, stage, paused, updated_at)
+      VALUES ($1, $2, $3, true, 'sa', false, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        name = COALESCE(EXCLUDED.name, proto_projects.name),
+        url = COALESCE(EXCLUDED.url, proto_projects.url),
+        updated_at = NOW()
       RETURNING *
-    `, [id, active]);
+    `, [id, name || null, url || null]);
+
+    // Create default SDLC cycles
+    await ensureDefaultCycles(id);
+
+    res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/projects/:id — update project
+app.patch("/api/projects/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { active, name, url } = req.body;
+
+    const sets = ['updated_at = NOW()'];
+    const vals = [];
+    let idx = 1;
+
+    if (typeof active === "boolean") { sets.push(`active = $${idx}`); vals.push(active); idx++; }
+    if (name !== undefined) { sets.push(`name = $${idx}`); vals.push(name); idx++; }
+    if (url !== undefined) { sets.push(`url = $${idx}`); vals.push(url); idx++; }
+
+    if (vals.length === 0) {
+      return res.status(400).json({ error: "No fields to update" });
+    }
+
+    vals.push(id);
+    const { rows } = await pool.query(`
+      INSERT INTO proto_projects (id, active, updated_at) VALUES ($${idx}, true, NOW())
+      ON CONFLICT (id) DO UPDATE SET ${sets.join(', ')}
+      RETURNING *
+    `, vals);
 
     res.json(rows[0]);
   } catch (e) {
@@ -766,7 +804,7 @@ app.patch("/api/projects/:id", async (req, res) => {
 
 const SDLC_STAGES = ['sa', 'brand', 'proto', 'fix', 'cicd', 'development', 'testing', 'done'];
 const STAGE_COMMANDS = {
-  sa: ['sa'],
+  sa: [],           // manual (local only — user does SA personally)
   brand: [],       // manual (local)
   proto: ['proto'],
   fix: [],         // manual (local)
@@ -774,6 +812,16 @@ const STAGE_COMMANDS = {
   development: ['audit'],
   testing: ['dotest'],
   done: [],
+};
+const STAGE_RUNNERS = {
+  sa: 'local',      // user does SA personally via CLI
+  brand: 'local',   // manual branding
+  proto: 'server',  // OpenHands in Docker
+  fix: 'local',     // manual fixes
+  cicd: 'server',   // OpenHands in Docker
+  development: 'server', // OpenHands in Docker
+  testing: 'server',     // OpenHands in Docker
+  done: 'local',
 };
 const DEFAULT_TARGETS = { sa: 10, proto: 10, cicd: 1, audit: 10, dotest: 10 };
 
@@ -853,6 +901,7 @@ app.get("/api/projects/:id/stages", async (req, res) => {
       current_stage: currentStage,
       current_index: currentIndex,
       total_stages: SDLC_STAGES.length,
+      runners: STAGE_RUNNERS,
       paused: project.paused || false,
       sa_schema_id: schemaId,
       sa_schema_url: schemaId ? `https://diagrams.love/canvas?schema=${schemaId}` : null,

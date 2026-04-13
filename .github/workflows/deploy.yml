@@ -1,0 +1,54 @@
+name: Deploy proto-hub
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy hub-api + hub UI
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 95.217.84.161
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: COMMIT_SHA,GITHUB_TOKEN
+          script: |
+            # Download repo tarball
+            cd /tmp && rm -rf proto-hub-deploy && mkdir proto-hub-deploy && cd proto-hub-deploy
+            curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
+              "https://api.github.com/repos/serter2069/proto-hub/tarball/${COMMIT_SHA}" | tar xz --strip-components=1
+
+            # Deploy hub-api (Express + PostgreSQL)
+            cp hub-api/server.js /var/www/proto-hub-api/server.js
+            cp hub-api/docs-store.js /var/www/proto-hub-api/docs-store.js 2>/dev/null || true
+
+            # Deploy hub UI (static index.html)
+            cp hub/index.html /var/www/proto/index.html
+
+            # Deploy oh-orchestrator
+            cp oh-orchestrator.sh /var/www/proto-hub-api/oh-orchestrator.sh
+            chmod +x /var/www/proto-hub-api/oh-orchestrator.sh
+
+            # Install deps if package.json changed
+            if [ -f hub-api/package.json ]; then
+              cp hub-api/package.json /var/www/proto-hub-api/package.json
+              cd /var/www/proto-hub-api && npm install --omit=dev 2>/dev/null || true
+            fi
+
+            # Cleanup
+            rm -rf /tmp/proto-hub-deploy
+
+            # Restart hub-api
+            pm2 restart proto-hub-api 2>/dev/null || true
+
+            # Version marker
+            echo "{\"version\":\"${COMMIT_SHA:0:7}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > /var/www/proto/hub-version.json
+
+            echo "proto-hub deployed: ${COMMIT_SHA:0:7}"
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

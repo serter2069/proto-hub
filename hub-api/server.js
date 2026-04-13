@@ -764,6 +764,10 @@ app.post("/api/projects/:id/rename", async (req, res) => {
 
     await client.query("BEGIN");
 
+    // Temporarily drop FK constraints to allow atomic rename
+    await client.query("ALTER TABLE stories DROP CONSTRAINT IF EXISTS stories_page_id_project_id_fkey");
+    await client.query("ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_project_id_fkey");
+
     // 1. Create new project entry with old project's data
     const old = oldRows[0];
     await client.query(`
@@ -772,15 +776,25 @@ app.post("/api/projects/:id/rename", async (req, res) => {
     `, [newId, old.active, old.sa_schema_id, old.stage, old.stage_updated_at, old.paused, old.name, old.url]);
 
     // 2. Migrate all related tables
-    await client.query("UPDATE pages SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
     await client.query("UPDATE stories SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
+    await client.query("UPDATE test_runs SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
+    await client.query("UPDATE pages SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
     await client.query("UPDATE proto_runs SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
     await client.query("UPDATE proto_files SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
     await client.query("UPDATE sdlc_cycles SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
-    await client.query("UPDATE test_runs SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
 
     // 3. Delete old project entry
     await client.query("DELETE FROM proto_projects WHERE id=$1", [oldId]);
+
+    // 4. Re-add FK constraints
+    await client.query(`
+      ALTER TABLE pages ADD CONSTRAINT pages_project_id_fkey
+      FOREIGN KEY (project_id) REFERENCES proto_projects(id) ON DELETE CASCADE
+    `);
+    await client.query(`
+      ALTER TABLE stories ADD CONSTRAINT stories_page_id_project_id_fkey
+      FOREIGN KEY (page_id, project_id) REFERENCES pages(id, project_id) ON DELETE CASCADE
+    `);
 
     await client.query("COMMIT");
     res.json({ ok: true, from: oldId, to: newId });

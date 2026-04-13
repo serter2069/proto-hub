@@ -87,7 +87,7 @@ async function initTables() {
     )
   `);
   await pool.query(`
-    INSERT INTO proto_projects (id) VALUES ('p2ptax'),('daterabbit'),('dressit'),('avito-georgia'),('chesstourism'),('gun'),('reference')
+    INSERT INTO proto_projects (id) VALUES ('p2ptax'),('date-rabbit'),('dressit'),('avito-georgia'),('chesstourism'),('gun'),('reference')
     ON CONFLICT DO NOTHING
   `);
 
@@ -114,7 +114,7 @@ async function initTables() {
   // Pre-populate known SA schema IDs
   await pool.query(`
     UPDATE proto_projects SET sa_schema_id = 'cmnw5361i000czmerbi780b2j' WHERE id = 'p2ptax' AND (sa_schema_id IS NULL OR sa_schema_id = '');
-    UPDATE proto_projects SET sa_schema_id = 'cmnw53r4l000izmerguf0hp0l' WHERE id = 'daterabbit' AND (sa_schema_id IS NULL OR sa_schema_id = '');
+    UPDATE proto_projects SET sa_schema_id = 'cmnw53r4l000izmerguf0hp0l' WHERE id = 'date-rabbit' AND (sa_schema_id IS NULL OR sa_schema_id = '');
     UPDATE proto_projects SET sa_schema_id = 'cmnw53uk9000kzmerv59t1mwa' WHERE id = 'gun' AND (sa_schema_id IS NULL OR sa_schema_id = '');
     UPDATE proto_projects SET sa_schema_id = 'cmnw53bop000ezmerdh298uvt' WHERE id = 'avito-georgia' AND (sa_schema_id IS NULL OR sa_schema_id = '');
     UPDATE proto_projects SET sa_schema_id = 'cmnw53ehn000gzmer2v5e15cz' WHERE id = 'chesstourism' AND (sa_schema_id IS NULL OR sa_schema_id = '');
@@ -739,6 +739,56 @@ app.delete("/api/projects/:id", async (req, res) => {
     res.json({ ok: true, deleted: id });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/projects/:id/rename — rename project ID across all tables
+app.post("/api/projects/:id/rename", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const oldId = req.params.id;
+    const { newId } = req.body;
+    if (!newId || !/^[a-z0-9-]+$/.test(newId)) {
+      return res.status(400).json({ error: "newId required (lowercase alphanumeric with hyphens)" });
+    }
+
+    // Check old project exists
+    const { rows: oldRows } = await client.query("SELECT * FROM proto_projects WHERE id=$1", [oldId]);
+    if (!oldRows.length) return res.status(404).json({ error: "Project not found" });
+
+    // Check new ID doesn't already exist in proto_projects
+    const { rows: newRows } = await client.query("SELECT id FROM proto_projects WHERE id=$1", [newId]);
+    if (newRows.length) {
+      return res.status(409).json({ error: `Project '${newId}' already exists. Delete it first or choose another ID.` });
+    }
+
+    await client.query("BEGIN");
+
+    // 1. Create new project entry with old project's data
+    const old = oldRows[0];
+    await client.query(`
+      INSERT INTO proto_projects (id, active, sa_schema_id, stage, stage_updated_at, paused, name, url, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+    `, [newId, old.active, old.sa_schema_id, old.stage, old.stage_updated_at, old.paused, old.name, old.url]);
+
+    // 2. Migrate all related tables
+    await client.query("UPDATE pages SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
+    await client.query("UPDATE stories SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
+    await client.query("UPDATE proto_runs SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
+    await client.query("UPDATE proto_files SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
+    await client.query("UPDATE sdlc_cycles SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
+    await client.query("UPDATE test_runs SET project_id=$1 WHERE project_id=$2", [newId, oldId]);
+
+    // 3. Delete old project entry
+    await client.query("DELETE FROM proto_projects WHERE id=$1", [oldId]);
+
+    await client.query("COMMIT");
+    res.json({ ok: true, from: oldId, to: newId });
+  } catch (e) {
+    await client.query("ROLLBACK").catch(() => {});
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
   }
 });
 

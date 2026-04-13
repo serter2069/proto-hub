@@ -16,55 +16,41 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .cron-monitor h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
 .cron-line { font-size: 13px; color: #444; margin-bottom: 6px; }
 .cron-line strong { color: #111; }
-.cron-btn { display: inline-block; margin-top: 10px; padding: 6px 14px; font-size: 12px; font-weight: 600; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: background 0.15s; }
-.cron-btn:hover { background: #1d4ed8; }
-.cron-btn:disabled { background: #93c5fd; cursor: wait; }
 
 /* Grid */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; max-width: 1200px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; max-width: 1200px; }
 
 /* Card */
-.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; transition: border-color 0.15s, box-shadow 0.15s; position: relative; cursor: pointer; text-decoration: none; color: inherit; display: block; }
+.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px 24px; transition: border-color 0.15s, box-shadow 0.15s; position: relative; cursor: pointer; text-decoration: none; color: inherit; display: block; }
 .card:hover { border-color: #aaa; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-.card.inactive { opacity: 0.5; }
-.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-.card-name { font-size: 17px; font-weight: 600; }
-.card-url { font-size: 12px; color: #999; margin-bottom: 12px; }
+.card.inactive { opacity: 0.45; }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+.card-name { font-size: 17px; font-weight: 700; }
+.card-url { font-size: 12px; color: #999; margin-bottom: 20px; }
 
 /* Active toggle */
-.toggle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #d1d5db; background: #fff; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+.toggle { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #d1d5db; background: #fff; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
 .toggle.active { background: #22c55e; border-color: #22c55e; }
 .toggle:hover { border-color: #9ca3af; }
-.inactive-label { font-size: 11px; color: #9ca3af; margin-left: 6px; }
+.inactive-label { font-size: 11px; color: #9ca3af; margin-right: 6px; }
 
-/* Chips */
-.chips { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-.chip { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 8px; cursor: pointer; user-select: none; transition: opacity 0.15s; }
-.chip:hover { opacity: 0.8; }
-.chip.red { background: #fef2f2; color: #dc2626; }
-.chip.yellow { background: #fefce8; color: #ca8a04; }
-.chip.green { background: #f0fdf4; color: #16a34a; }
-.chip-edit { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 4px; gap: 2px; }
-.chip-edit input { width: 32px; font-size: 11px; font-weight: 600; border: 1px solid #d1d5db; border-radius: 3px; padding: 1px 4px; text-align: center; outline: none; }
-.chip-edit input:focus { border-color: #2563eb; }
-.chip-edit .chip-label { font-size: 11px; color: #666; }
+/* Stats row */
+.stats-row { display: flex; gap: 12px; margin-bottom: 20px; }
+.stat-block { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
+.stat-block:hover { border-color: #93c5fd; background: #f0f7ff; }
+.stat-num { font-size: 36px; font-weight: 700; line-height: 1; }
+.stat-num.high { color: #16a34a; }
+.stat-num.mid { color: #ca8a04; }
+.stat-num.low { color: #dc2626; }
+.stat-label { font-size: 10px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
 
-/* Stories */
-.stories { font-size: 12px; color: #666; margin-bottom: 12px; }
-
-/* Command buttons */
-.cmd-buttons { display: flex; gap: 8px; margin-bottom: 12px; }
-.cmd-btn { padding: 5px 12px; font-size: 11px; font-weight: 600; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
-.cmd-btn:hover { background: #e5e7eb; }
-.cmd-btn:disabled { opacity: 0.5; cursor: wait; }
-.cmd-btn .spinner { display: none; width: 10px; height: 10px; border: 2px solid #999; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-left: 4px; vertical-align: middle; }
-.cmd-btn:disabled .spinner { display: inline-block; }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* Stat inline edit */
+.stat-edit-input { width: 60px; font-size: 28px; font-weight: 700; border: 2px solid #2563eb; border-radius: 6px; padding: 2px 6px; text-align: center; outline: none; background: #fff; color: #111; }
 
 /* Log drawer */
-.log-toggle { font-size: 12px; color: #2563eb; cursor: pointer; margin-bottom: 8px; user-select: none; }
+.log-toggle { font-size: 12px; color: #2563eb; cursor: pointer; user-select: none; }
 .log-toggle:hover { text-decoration: underline; }
-.log-drawer { display: none; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; max-height: 260px; overflow-y: auto; }
+.log-drawer { display: none; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; margin-top: 10px; max-height: 260px; overflow-y: auto; }
 .log-drawer.open { display: block; }
 .log-entry { font-size: 12px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
 .log-entry:last-child { border-bottom: none; }
@@ -78,8 +64,8 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .log-links a:hover { text-decoration: underline; }
 .log-loading { font-size: 12px; color: #999; }
 
-/* CTA */
-.card-cta { display: inline-block; font-size: 13px; color: #2563eb; text-decoration: none; }
+/* Card footer */
+.card-cta { display: inline-block; font-size: 12px; color: #2563eb; text-decoration: none; margin-top: 14px; }
 .card-cta:hover { text-decoration: underline; }
 
 /* Toast */
@@ -137,76 +123,6 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .doc-empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }
 @media (max-width: 768px) { .docs-layout { flex-direction: column; } .docs-list { width: 100%; max-height: 40vh; } }
 
-/* Stories Modal */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; }
-.modal-backdrop.open { display: flex; }
-.modal { background: #fff; border-radius: 12px; width: 95%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 12px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
-.modal-header h2 { font-size: 18px; font-weight: 700; }
-.modal-close { width: 32px; height: 32px; border: none; background: #f3f4f6; border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666; }
-.modal-close:hover { background: #e5e7eb; }
-.modal-summary { display: flex; gap: 12px; padding: 12px 24px; flex-wrap: wrap; flex-shrink: 0; }
-.summary-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
-.summary-badge.total { background: #f3f4f6; color: #374151; }
-.summary-badge.passed { background: #dcfce7; color: #16a34a; }
-.summary-badge.failed { background: #fef2f2; color: #dc2626; }
-.summary-badge.pending { background: #fefce8; color: #ca8a04; }
-.summary-badge.skipped { background: #f3f4f6; color: #6b7280; }
-.modal-filters { display: flex; gap: 6px; padding: 0 24px 12px; flex-shrink: 0; flex-wrap: wrap; }
-.filter-tab { padding: 5px 14px; font-size: 12px; font-weight: 600; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; transition: all 0.15s; }
-.filter-tab:hover { background: #f3f4f6; }
-.filter-tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
-.modal-body { overflow-y: auto; padding: 12px 24px 24px; flex: 1; }
-.story-item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
-.story-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
-.story-id { font-size: 12px; color: #999; font-weight: 600; }
-.story-page { font-size: 11px; color: #2563eb; background: #eff6ff; padding: 1px 6px; border-radius: 3px; }
-.story-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-.story-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #666; margin-bottom: 8px; flex-wrap: wrap; }
-.story-role { font-size: 11px; font-weight: 600; color: #6b7280; background: #f3f4f6; padding: 1px 6px; border-radius: 3px; }
-.status-badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px; cursor: pointer; position: relative; user-select: none; }
-.status-badge.passed { background: #dcfce7; color: #16a34a; }
-.status-badge.failed { background: #fef2f2; color: #dc2626; }
-.status-badge.pending { background: #fefce8; color: #ca8a04; }
-.status-badge.skipped { background: #f3f4f6; color: #6b7280; }
-.status-badge:hover { opacity: 0.85; }
-.status-dropdown { position: absolute; top: 100%; left: 0; margin-top: 4px; background: #fff; border: 1px solid #d1d5db; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; min-width: 120px; overflow: hidden; }
-.status-option { padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-.status-option:hover { background: #f3f4f6; }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.status-dot.passed { background: #16a34a; } .status-dot.failed { background: #dc2626; } .status-dot.skipped { background: #9ca3af; }
-.failure-input { display: flex; gap: 6px; margin-top: 8px; }
-.failure-input input { flex: 1; font-size: 12px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
-.failure-input input:focus { border-color: #2563eb; }
-.failure-input button { padding: 6px 12px; font-size: 11px; font-weight: 600; background: #dc2626; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-.failure-input button:hover { background: #b91c1c; }
-.story-details { font-size: 12px; color: #555; }
-.story-details summary { cursor: pointer; color: #2563eb; font-weight: 600; margin-bottom: 4px; }
-.story-steps { margin: 4px 0 0 16px; list-style: decimal; } .story-steps li { margin-bottom: 2px; }
-.story-expected { margin-top: 6px; color: #374151; } .story-expected strong { color: #111; }
-.story-tested { font-size: 11px; color: #888; margin-top: 4px; }
-.story-failure { font-size: 12px; color: #dc2626; margin-top: 4px; font-style: italic; }
-.story-edit-btn { font-size: 11px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 8px; cursor: pointer; margin-left: 8px; transition: all 0.15s; }
-.story-edit-btn:hover { background: #dbeafe; }
-.story-item.editing { background: #eff6ff; border-color: #93c5fd; }
-.story-edit-form { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-.story-edit-form label { font-size: 11px; font-weight: 600; color: #374151; }
-.story-edit-form input, .story-edit-form textarea, .story-edit-form select { font-size: 12px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-family: inherit; }
-.story-edit-form input:focus, .story-edit-form textarea:focus, .story-edit-form select:focus { border-color: #2563eb; }
-.story-edit-form textarea { min-height: 60px; resize: vertical; }
-.story-edit-actions { display: flex; gap: 8px; margin-top: 4px; }
-.story-edit-actions button { padding: 5px 14px; font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
-.story-save-btn { background: #16a34a; color: #fff; }
-.story-save-btn:hover { background: #15803d; }
-.story-save-btn:disabled { background: #86efac; cursor: wait; }
-.story-cancel-btn { background: #e5e7eb; color: #374151; }
-.story-cancel-btn:hover { background: #d1d5db; }
-.role-filters { display: flex; gap: 6px; flex-wrap: wrap; }
-.story-empty { text-align: center; padding: 40px 20px; color: #999; font-size: 14px; }
-.manage-btn { display: inline-block; font-size: 11px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 5px; padding: 2px 8px; cursor: pointer; margin-left: 8px; transition: all 0.15s; }
-.manage-btn:hover { background: #dbeafe; }
-@media (max-width: 640px) { .modal { width: 100%; max-width: 100%; max-height: 100vh; border-radius: 0; } }
-
 /* OpenHands Dashboard */
 .oh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-width: 1200px; margin-bottom: 24px; }
 .oh-stat { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px 20px; text-align: center; }
@@ -216,7 +132,6 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .oh-stat.running .oh-stat-num { color: #2563eb; }
 .oh-stat.done .oh-stat-num { color: #16a34a; }
 .oh-stat.failed .oh-stat-num { color: #dc2626; }
-
 .oh-section { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px 24px; max-width: 1200px; margin-bottom: 16px; }
 .oh-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .oh-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -239,7 +154,6 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .oh-header-title { font-size: 16px; font-weight: 600; }
 .oh-header-sub { font-size: 12px; color: #999; }
 .oh-containers { font-size: 13px; color: #2563eb; font-weight: 600; }
-
 .oh-log { background: #111; border-radius: 10px; padding: 16px; max-width: 1200px; max-height: 300px; overflow-y: auto; margin-bottom: 16px; }
 .oh-log-line { font-family: ui-monospace, monospace; font-size: 12px; color: #d1d5db; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
 .oh-log-line.done { color: #86efac; }
@@ -328,33 +242,21 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 
 <div class="toast-container" id="toasts"></div>
 
-<div class="modal-backdrop" id="storiesModal" onclick="if(event.target===this)closeStories()">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="storiesTitle">Stories</h2>
-      <button class="modal-close" onclick="closeStories()">&times;</button>
-    </div>
-    <div class="modal-summary" id="storiesSummary"></div>
-    <div class="modal-filters" id="storiesFilters"></div>
-    <div class="modal-body" id="storiesBody"></div>
-  </div>
-</div>
-
 <script>
 const API = '/hub/api';
-const API_KEY = 'proto-hub-2026';
-const PROJECTS = [
-  {id: 'reference', name: 'Reference Template', url: 'Mandatory pages template', href: '/reference/'},
-  {id: 'p2ptax', name: 'P2PTax', url: 'p2ptax.smartlaunchhub.com', href: '/p2ptax/'},
-  {id: 'avito-georgia', name: 'Avito Georgia', url: 'avito-georgia.smartlaunchhub.com', href: '/avito-georgia/'},
-  {id: 'chesstourism', name: 'Chess Tourism', url: 'chesstourism.smartlaunchhub.com', href: '/chesstourism/'},
-  {id: 'daterabbit', name: 'DateRabbit', url: 'daterabbit.smartlaunchhub.com', href: '/daterabbit/'},
-  {id: 'gun', name: 'Gun Market', url: 'arms-market.smartlaunchhub.com', href: '/gun/'},
-  {id: 'dressit', name: 'DressIT', url: 'dressitnow.com', href: '/dressit/'},
-  {id: 'motosocial', name: 'MotoSocial', url: 'moto.smartlaunchhub.com', href: '/moto/'},
-];
 
-const state = { runs: {}, active: {}, stories: {}, logCache: {} };
+// Display metadata for known projects
+const PROJECT_META = {
+  'reference':     { name: 'Reference Template', url: 'Mandatory pages template', href: '/reference/' },
+  'p2ptax':        { name: 'P2PTax',             url: 'p2ptax.smartlaunchhub.com', href: '/p2ptax/' },
+  'avito-georgia': { name: 'Avito Georgia',       url: 'avito-georgia.smartlaunchhub.com', href: '/avito-georgia/' },
+  'chesstourism':  { name: 'Chess Tourism',       url: 'chesstourism.smartlaunchhub.com', href: '/chesstourism/' },
+  'daterabbit':    { name: 'DateRabbit',          url: 'daterabbit.smartlaunchhub.com', href: '/daterabbit/' },
+  'gun':           { name: 'Gun Market',          url: 'arms-market.smartlaunchhub.com', href: '/gun/' },
+  'dressit':       { name: 'DressIT',             url: 'dressitnow.com', href: '/dressit/' },
+};
+
+const state = { runs: {}, active: {}, projects: [], logCache: {} };
 
 function toast(msg, isError) {
   const el = document.createElement('div');
@@ -364,10 +266,10 @@ function toast(msg, isError) {
   setTimeout(() => el.remove(), 3000);
 }
 
-function chipColor(n) {
-  if (n >= 8) return 'green';
-  if (n >= 3) return 'yellow';
-  return 'red';
+function statColor(n) {
+  if (n >= 8) return 'high';
+  if (n >= 3) return 'mid';
+  return 'low';
 }
 
 function fmtTime(ts) {
@@ -397,72 +299,44 @@ async function loadCron() {
       '<div class="cron-line"><strong>OH-watcher:</strong> last poll ' + fmtTime(oh.lastPoll) +
       ' &mdash; ' + (lh.start || 0) + ' jobs running</div>' +
       '<div class="cron-line">Last hour: <strong>' + (lh.done || 0) + '</strong> DONE / <strong>' +
-      (lh.fail || 0) + '</strong> FAIL</div>' +
-      '<button class="cron-btn" onclick="triggerCron()">&#9654; Run smart-cron now</button>';
+      (lh.fail || 0) + '</strong> FAIL</div>';
   } catch (e) {
     el.className = '';
     el.textContent = 'Error loading cron status';
   }
 }
 
-async function triggerCron() {
-  const btn = document.querySelector('.cron-btn');
-  if (!btn) return;
-  btn.disabled = true;
-  btn.textContent = 'Running...';
-  try {
-    await fetch(API + '/cron/trigger', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Proto-Key': API_KEY },
-      body: JSON.stringify({ command: 'smart-cron' })
-    });
-    toast('Smart-cron triggered');
-    setTimeout(loadCron, 2000);
-  } catch (e) {
-    toast('Failed to trigger smart-cron', true);
-  }
-  btn.disabled = false;
-  btn.innerHTML = '&#9654; Run smart-cron now';
-}
-
 // --- Render ---
 function renderCard(p) {
   const runs = state.runs[p.id] || {};
   const proto = runs.proto || 0;
-  const check = runs['proto-check'] || 0;
+  const sa = runs.sa || 0;
   const isActive = state.active[p.id] !== false;
-  const story = state.stories[p.id];
 
-  let storiesText = 'Stories: loading...';
-  if (story) {
-    storiesText = story.total > 0
-      ? 'Stories: ' + story.passed + ' passed / ' + story.total + ' total'
-      : 'Stories: ---';
-  }
+  const meta = PROJECT_META[p.id] || { name: p.id, url: '', href: '#' };
 
   const card = document.createElement('a');
-  card.href = p.href;
+  card.href = meta.href;
   card.className = 'card' + (isActive ? '' : ' inactive');
   card.id = 'card-' + p.id;
   card.innerHTML =
     '<div class="card-header">' +
-      '<div class="card-name">' + p.name + '</div>' +
-      '<div style="display:flex;align-items:center">' +
+      '<div class="card-name">' + meta.name + '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px">' +
         (!isActive ? '<span class="inactive-label">inactive</span>' : '') +
         '<div class="toggle ' + (isActive ? 'active' : '') + '" onclick="event.preventDefault();event.stopPropagation();toggleActive(\'' + p.id + '\')" title="' + (isActive ? 'Active' : 'Inactive') + '"></div>' +
       '</div>' +
     '</div>' +
-    '<div class="card-url">' + p.url + '</div>' +
-    '<div class="chips">' +
-      '<span class="chip ' + chipColor(proto) + '" onclick="event.preventDefault();event.stopPropagation();editChip(\'' + p.id + '\',\'proto\',' + proto + ',this)">proto ' + proto + '/10</span>' +
-      '<span class="chip ' + chipColor(check) + '" onclick="event.preventDefault();event.stopPropagation();editChip(\'' + p.id + '\',\'proto-check\',' + check + ',this)">proto-check ' + check + '/10</span>' +
-    '</div>' +
-    '<div class="stories" id="stories-' + p.id + '">' + storiesText +
-      '<span class="manage-btn" onclick="event.preventDefault();event.stopPropagation();openStories(\'' + p.id + '\',\'' + p.name + '\')">Manage</span>' +
-    '</div>' +
-    '<div class="cmd-buttons">' +
-      '<button class="cmd-btn" onclick="event.preventDefault();event.stopPropagation();runCmd(\'' + p.id + '\',\'proto\',this)">Run /proto<span class="spinner"></span></button>' +
-      '<button class="cmd-btn" onclick="event.preventDefault();event.stopPropagation();runCmd(\'' + p.id + '\',\'proto-check\',this)">Run /proto-check<span class="spinner"></span></button>' +
+    '<div class="card-url">' + meta.url + '</div>' +
+    '<div class="stats-row">' +
+      '<div class="stat-block" onclick="event.preventDefault();event.stopPropagation();editStat(\'' + p.id + '\',\'proto\',' + proto + ',this)" title="Click to edit">' +
+        '<div class="stat-num ' + statColor(proto) + '" id="stat-proto-' + p.id + '">' + proto + '</div>' +
+        '<div class="stat-label">proto</div>' +
+      '</div>' +
+      '<div class="stat-block" onclick="event.preventDefault();event.stopPropagation();editStat(\'' + p.id + '\',\'sa\',' + sa + ',this)" title="Click to edit">' +
+        '<div class="stat-num ' + statColor(sa) + '" id="stat-sa-' + p.id + '">' + sa + '</div>' +
+        '<div class="stat-label">sa</div>' +
+      '</div>' +
     '</div>' +
     '<div class="log-toggle" onclick="event.preventDefault();event.stopPropagation();toggleLogs(\'' + p.id + '\')">&#9660; OH Logs</div>' +
     '<div class="log-drawer" id="logs-' + p.id + '"></div>' +
@@ -473,7 +347,7 @@ function renderCard(p) {
 function renderGrid() {
   const grid = document.getElementById('projectGrid');
   grid.innerHTML = '';
-  PROJECTS.forEach(function(p) { grid.appendChild(renderCard(p)); });
+  state.projects.forEach(function(p) { grid.appendChild(renderCard(p)); });
 }
 
 // --- Toggle Active ---
@@ -491,22 +365,6 @@ async function toggleActive(id) {
   } catch (e) {
     toast('Failed to toggle ' + id, true);
   }
-}
-
-// --- Run Command ---
-async function runCmd(project, command, btn) {
-  btn.disabled = true;
-  try {
-    await fetch(API + '/cron/trigger', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Proto-Key': API_KEY },
-      body: JSON.stringify({ command: command === 'proto' ? 'proto-cron' : 'proto-cron', project: project })
-    });
-    toast('Queued for ' + project);
-  } catch (e) {
-    toast('Failed to queue ' + project, true);
-  }
-  btn.disabled = false;
 }
 
 // --- Log Drawer ---
@@ -539,8 +397,7 @@ async function toggleLogs(id) {
       var issueUrl = 'https://github.com/serter2069/' + id + '/issues/' + log.issueNumber;
       var links = '';
       if (log.prUrl) links += '<a href="' + log.prUrl + '" target="_blank">PR</a>';
-      if (log.commitUrl) links += '<a href="' + log.commitUrl + '" target="_blank">commit</a>';
-      if (log.logFile) links += '<a href="' + API + '/projects/' + id + '/oh-logs/' + log.logFile + '/raw" target="_blank">view full log</a>';
+      if (log.logFile) links += '<a href="' + API + '/projects/' + id + '/oh-logs/' + log.logFile + '/raw" target="_blank">view log</a>';
       html +=
         '<div class="log-entry">' +
           '<span class="log-ts">' + fmtTime(log.ts) + '</span>' +
@@ -557,32 +414,26 @@ async function toggleLogs(id) {
   }
 }
 
-// --- Edit Chip ---
-function editChip(projectId, command, currentValue, chipEl) {
-  var label = command + ' ';
-  var wrapper = document.createElement('span');
-  wrapper.className = 'chip-edit';
+// --- Edit Stat ---
+function editStat(projectId, command, currentValue, blockEl) {
+  var numEl = blockEl.querySelector('.stat-num');
+  if (!numEl) return;
+
   var input = document.createElement('input');
   input.type = 'number';
   input.min = '0';
-  input.max = '99';
+  input.max = '999';
   input.value = currentValue;
-  var suffix = document.createElement('span');
-  suffix.className = 'chip-label';
-  suffix.textContent = '/10';
+  input.className = 'stat-edit-input';
 
-  wrapper.appendChild(document.createTextNode(label));
-  wrapper.appendChild(input);
-  wrapper.appendChild(suffix);
-
-  chipEl.replaceWith(wrapper);
+  numEl.replaceWith(input);
   input.focus();
   input.select();
 
   function save() {
     var val = parseInt(input.value);
     if (isNaN(val) || val < 0) val = 0;
-    if (val > 99) val = 99;
+    if (val > 999) val = 999;
     fetch(API + '/runs/set', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -594,363 +445,20 @@ function editChip(projectId, command, currentValue, chipEl) {
       if (!state.runs[projectId]) state.runs[projectId] = {};
       state.runs[projectId][command] = data.count;
       renderGrid();
-      toast(command + ' set to ' + data.count + ' for ' + projectId);
-    }).catch(function(e) {
+      toast(command + ' → ' + data.count + ' (' + projectId + ')');
+    }).catch(function() {
       toast('Failed to update ' + command, true);
       renderGrid();
     });
   }
 
-  function cancel() {
-    renderGrid();
-  }
-
   input.addEventListener('keydown', function(e) {
     e.stopPropagation();
     if (e.key === 'Enter') { e.preventDefault(); save(); }
-    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    if (e.key === 'Escape') { e.preventDefault(); renderGrid(); }
   });
   input.addEventListener('blur', save);
   input.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); });
-}
-
-// --- Stories Modal ---
-var storiesState = { projectId: null, projectName: '', stories: [], filter: 'all', roleFilter: 'all', editingId: null, summary: {} };
-
-function openStories(projectId, projectName) {
-  storiesState.projectId = projectId;
-  storiesState.projectName = projectName;
-  storiesState.filter = 'all';
-  storiesState.roleFilter = 'all';
-  storiesState.editingId = null;
-  document.getElementById('storiesTitle').textContent = projectName + ' \u2014 User Stories';
-  document.getElementById('storiesBody').innerHTML = '<div class="story-empty pulse">Loading stories...</div>';
-  document.getElementById('storiesSummary').innerHTML = '';
-  document.getElementById('storiesFilters').innerHTML = '';
-  document.getElementById('storiesModal').classList.add('open');
-  document.addEventListener('keydown', storiesEscHandler);
-  fetchStories();
-}
-
-function closeStories() {
-  document.getElementById('storiesModal').classList.remove('open');
-  document.removeEventListener('keydown', storiesEscHandler);
-  storiesState.projectId = null;
-}
-
-function storiesEscHandler(e) { if (e.key === 'Escape') closeStories(); }
-
-async function fetchStories() {
-  try {
-    var data = await apiFetch('/projects/' + storiesState.projectId + '/stories');
-    storiesState.stories = data;
-    var s = { total: data.length, passed: 0, failed: 0, pending: 0, skipped: 0 };
-    data.forEach(function(st) { if (s[st.status] !== undefined) s[st.status]++; });
-    storiesState.summary = s;
-    state.stories[storiesState.projectId] = s;
-    renderStoriesSummary();
-    renderStoriesFilters();
-    renderStoriesList();
-    renderGrid();
-  } catch (e) {
-    document.getElementById('storiesBody').innerHTML = '<div class="story-empty">Error loading stories</div>';
-  }
-}
-
-function renderStoriesSummary() {
-  var s = storiesState.summary;
-  document.getElementById('storiesSummary').innerHTML =
-    '<span class="summary-badge total">Total: ' + s.total + '</span>' +
-    '<span class="summary-badge passed">Passed: ' + s.passed + '</span>' +
-    '<span class="summary-badge failed">Failed: ' + s.failed + '</span>' +
-    '<span class="summary-badge pending">Pending: ' + s.pending + '</span>' +
-    '<span class="summary-badge skipped">Skipped: ' + s.skipped + '</span>';
-}
-
-function renderStoriesFilters() {
-  var tabs = ['all', 'pending', 'passed', 'failed', 'skipped'];
-  var html = '';
-  tabs.forEach(function(t) {
-    html += '<button class="filter-tab' + (storiesState.filter === t ? ' active' : '') +
-      '" onclick="setStoriesFilter(\'' + t + '\')">' + t.charAt(0).toUpperCase() + t.slice(1) + '</button>';
-  });
-  // Role filter
-  var roles = [];
-  storiesState.stories.forEach(function(s) {
-    var r = s.role || '---';
-    if (roles.indexOf(r) === -1) roles.push(r);
-  });
-  roles.sort();
-  if (roles.length > 0) {
-    html += '<span style="margin-left:8px;border-left:1px solid #d1d5db;padding-left:8px"></span>';
-    html += '<button class="filter-tab' + (storiesState.roleFilter === 'all' ? ' active' : '') +
-      '" onclick="setRoleFilter(\'all\')">All Roles</button>';
-    roles.forEach(function(r) {
-      html += '<button class="filter-tab' + (storiesState.roleFilter === r ? ' active' : '') +
-        '" onclick="setRoleFilter(\'' + esc(r).replace(/'/g, "\\'") + '\')">' + esc(r) + '</button>';
-    });
-  }
-  document.getElementById('storiesFilters').innerHTML = html;
-}
-
-function setRoleFilter(r) {
-  storiesState.roleFilter = r;
-  storiesState.editingId = null;
-  renderStoriesFilters();
-  renderStoriesList();
-}
-
-function setStoriesFilter(f) {
-  storiesState.filter = f;
-  storiesState.editingId = null;
-  renderStoriesFilters();
-  renderStoriesList();
-}
-
-function renderStoriesList() {
-  var list = storiesState.stories;
-  if (storiesState.filter !== 'all') {
-    list = list.filter(function(s) { return s.status === storiesState.filter; });
-  }
-  if (storiesState.roleFilter !== 'all') {
-    list = list.filter(function(s) { return (s.role || '---') === storiesState.roleFilter; });
-  }
-  if (list.length === 0) {
-    var msg = storiesState.stories.length === 0 ? 'No stories yet' : 'No matching stories';
-    document.getElementById('storiesBody').innerHTML = '<div class="story-empty">' + msg + '</div>';
-    return;
-  }
-  var html = '';
-  list.forEach(function(s) {
-    var isEditing = storiesState.editingId === s.id;
-
-    if (isEditing) {
-      var stepsVal = Array.isArray(s.steps) ? s.steps.join('\n') : (s.steps || '');
-      html +=
-        '<div class="story-item editing" id="story-' + s.id + '">' +
-          '<div class="story-top">' +
-            '<div><span class="story-id">#' + s.id + '</span> <span class="story-page">' + esc(s.page_id) + '</span></div>' +
-            '<span class="status-badge ' + s.status + '">' + s.status.toUpperCase() + '</span>' +
-          '</div>' +
-          '<div class="story-edit-form">' +
-            '<label>Title</label>' +
-            '<input type="text" id="edit-title-' + s.id + '" value="' + esc(s.title).replace(/"/g, '&quot;') + '">' +
-            '<label>Role</label>' +
-            '<select id="edit-role-' + s.id + '">' +
-              ['PUBLIC','CLIENT','SPECIALIST','ADMIN','USER','GUEST'].map(function(r) {
-                return '<option value="' + r + '"' + ((s.role || '') === r ? ' selected' : '') + '>' + r + '</option>';
-              }).join('') +
-            '</select>' +
-            '<label>Precondition</label>' +
-            '<textarea id="edit-precondition-' + s.id + '">' + esc(s.precondition || '') + '</textarea>' +
-            '<label>Steps (one per line)</label>' +
-            '<textarea id="edit-steps-' + s.id + '">' + esc(stepsVal) + '</textarea>' +
-            '<label>Expected</label>' +
-            '<textarea id="edit-expected-' + s.id + '">' + esc(s.expected || '') + '</textarea>' +
-            '<div class="story-edit-actions">' +
-              '<button class="story-save-btn" onclick="saveStoryEdit(' + s.id + ')">Save</button>' +
-              '<button class="story-cancel-btn" onclick="cancelStoryEdit()">Cancel</button>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-      return;
-    }
-
-    var stepsHtml = '';
-    if (Array.isArray(s.steps) && s.steps.length > 0) {
-      stepsHtml = '<details class="story-details"><summary>Steps & Expected</summary>' +
-        '<ol class="story-steps">' + s.steps.map(function(st) { return '<li>' + esc(st) + '</li>'; }).join('') + '</ol>' +
-        '<div class="story-expected"><strong>Expected:</strong> ' + esc(s.expected || '---') + '</div></details>';
-    }
-    var testedHtml = '';
-    if (s.tested_by) {
-      testedHtml = '<div class="story-tested">Tested by ' + esc(s.tested_by) + (s.tested_at ? ' at ' + fmtTime(s.tested_at) : '') + '</div>';
-    }
-    var failHtml = '';
-    if (s.status === 'failed' && s.failure_reason) {
-      failHtml = '<div class="story-failure">Reason: ' + esc(s.failure_reason) + '</div>';
-    }
-
-    html +=
-      '<div class="story-item" id="story-' + s.id + '">' +
-        '<div class="story-top">' +
-          '<div><span class="story-id">#' + s.id + '</span> <span class="story-page">' + esc(s.page_id) + '</span></div>' +
-          '<div>' +
-            '<button class="story-edit-btn" onclick="startStoryEdit(' + s.id + ')">Edit</button>' +
-            '<span class="status-badge ' + s.status + '" onclick="toggleStatusDropdown(event,' + s.id + ')">' +
-              s.status.toUpperCase() + ' \u25BE' +
-            '</span>' +
-          '</div>' +
-        '</div>' +
-        '<div class="story-title">' + esc(s.title) + '</div>' +
-        '<div class="story-meta"><span class="story-role">' + esc(s.role || '---') + '</span></div>' +
-        stepsHtml + testedHtml + failHtml +
-        '<div id="failure-input-' + s.id + '"></div>' +
-      '</div>';
-  });
-  document.getElementById('storiesBody').innerHTML = html;
-}
-
-function startStoryEdit(storyId) {
-  storiesState.editingId = storyId;
-  renderStoriesList();
-}
-
-function cancelStoryEdit() {
-  storiesState.editingId = null;
-  renderStoriesList();
-}
-
-async function saveStoryEdit(storyId) {
-  var title = document.getElementById('edit-title-' + storyId).value.trim();
-  var role = document.getElementById('edit-role-' + storyId).value;
-  var precondition = document.getElementById('edit-precondition-' + storyId).value.trim();
-  var stepsRaw = document.getElementById('edit-steps-' + storyId).value.trim();
-  var expected = document.getElementById('edit-expected-' + storyId).value.trim();
-
-  if (!title) { toast('Title is required', true); return; }
-
-  var steps = stepsRaw.split('\n').filter(function(l) { return l.trim() !== ''; });
-
-  var btn = document.querySelector('.story-save-btn');
-  if (btn) btn.disabled = true;
-
-  try {
-    var res = await fetch(API + '/stories/' + storyId, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: title, role: role, precondition: precondition, steps: steps, expected: expected })
-    });
-    if (!res.ok) { var err = await res.json(); throw new Error(err.error || 'Failed'); }
-    var updated = await res.json();
-    // Update local state
-    var idx = storiesState.stories.findIndex(function(s) { return s.id === storyId; });
-    if (idx !== -1) {
-      storiesState.stories[idx].title = updated.title;
-      storiesState.stories[idx].role = updated.role;
-      storiesState.stories[idx].precondition = updated.precondition;
-      storiesState.stories[idx].steps = updated.steps;
-      storiesState.stories[idx].expected = updated.expected;
-    }
-    storiesState.editingId = null;
-    renderStoriesFilters();
-    renderStoriesList();
-    toast('Saved');
-  } catch (e) {
-    toast('Save failed: ' + e.message, true);
-    if (btn) btn.disabled = false;
-  }
-}
-
-function esc(str) {
-  var d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
-function toggleStatusDropdown(event, storyId) {
-  event.stopPropagation();
-  var badge = event.currentTarget;
-  var existing = badge.querySelector('.status-dropdown');
-  // close any open dropdowns
-  document.querySelectorAll('.status-dropdown').forEach(function(d) { d.remove(); });
-  if (existing) return;
-
-  var dd = document.createElement('div');
-  dd.className = 'status-dropdown';
-  ['passed', 'failed', 'skipped'].forEach(function(opt) {
-    var o = document.createElement('div');
-    o.className = 'status-option';
-    o.innerHTML = '<span class="status-dot ' + opt + '"></span>' + opt.charAt(0).toUpperCase() + opt.slice(1);
-    o.onclick = function(e) {
-      e.stopPropagation();
-      dd.remove();
-      if (opt === 'failed') {
-        showFailureInput(storyId);
-      } else {
-        updateStoryStatus(storyId, opt);
-      }
-    };
-    dd.appendChild(o);
-  });
-  badge.appendChild(dd);
-
-  function closeDropdown(e) {
-    if (!dd.contains(e.target)) {
-      dd.remove();
-      document.removeEventListener('click', closeDropdown);
-    }
-  }
-  setTimeout(function() { document.addEventListener('click', closeDropdown); }, 0);
-}
-
-function showFailureInput(storyId) {
-  var container = document.getElementById('failure-input-' + storyId);
-  if (!container) return;
-  container.innerHTML =
-    '<div class="failure-input">' +
-      '<input type="text" id="fail-reason-' + storyId + '" placeholder="Failure reason...">' +
-      '<button onclick="submitFailure(' + storyId + ')">Mark Failed</button>' +
-    '</div>';
-  var inp = document.getElementById('fail-reason-' + storyId);
-  inp.focus();
-  inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); submitFailure(storyId); }
-    if (e.key === 'Escape') { e.preventDefault(); container.innerHTML = ''; }
-  });
-}
-
-function submitFailure(storyId) {
-  var inp = document.getElementById('fail-reason-' + storyId);
-  var reason = inp ? inp.value.trim() : '';
-  updateStoryStatus(storyId, 'failed', reason || 'No reason provided');
-}
-
-async function updateStoryStatus(storyId, status, failureReason) {
-  var body = { status: status, tested_by: 'user' };
-  if (failureReason) body.failure_reason = failureReason;
-
-  // find old status for revert
-  var story = storiesState.stories.find(function(s) { return s.id === storyId; });
-  var oldStatus = story ? story.status : null;
-
-  // optimistic update
-  if (story) {
-    story.status = status;
-    story.tested_by = 'user';
-    story.tested_at = new Date().toISOString();
-    if (failureReason) story.failure_reason = failureReason;
-  }
-  recalcSummary();
-  renderStoriesSummary();
-  renderStoriesList();
-
-  try {
-    var res = await fetch(API + '/stories/' + storyId, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) throw new Error('Failed');
-    toast('Story #' + storyId + ' → ' + status);
-    // update main grid summary
-    state.stories[storiesState.projectId] = storiesState.summary;
-    renderGrid();
-  } catch (e) {
-    toast('Failed to update story #' + storyId, true);
-    if (story && oldStatus) {
-      story.status = oldStatus;
-      recalcSummary();
-      renderStoriesSummary();
-      renderStoriesList();
-    }
-  }
-}
-
-function recalcSummary() {
-  var s = { total: storiesState.stories.length, passed: 0, failed: 0, pending: 0, skipped: 0 };
-  storiesState.stories.forEach(function(st) { if (s[st.status] !== undefined) s[st.status]++; });
-  storiesState.summary = s;
 }
 
 // --- Tabs ---
@@ -976,9 +484,7 @@ async function loadDocs() {
   }
 }
 
-function filterDocs() {
-  renderDocsList();
-}
+function filterDocs() { renderDocsList(); }
 
 function renderDocsList() {
   var q = (document.getElementById('docsSearch').value || '').toLowerCase();
@@ -1030,13 +536,9 @@ function renderDocDetail(doc) {
 }
 
 async function editDoc(name) {
-  docsState.editing = true;
   var doc;
-  try {
-    doc = await apiFetch('/docs/' + encodeURIComponent(name));
-  } catch (e) {
-    doc = { name: name, content: '', description: '' };
-  }
+  try { doc = await apiFetch('/docs/' + encodeURIComponent(name)); }
+  catch (e) { doc = { name: name, content: '', description: '' }; }
   renderDocEditForm(doc);
 }
 
@@ -1071,7 +573,6 @@ async function saveDoc() {
   var desc = document.getElementById('docEditDesc').value.trim();
   var content = document.getElementById('docEditContent').value;
   if (!name) { toast('Name is required', true); return; }
-
   try {
     await fetch(API + '/docs/' + encodeURIComponent(name), {
       method: 'PUT',
@@ -1091,15 +592,28 @@ async function saveDoc() {
 
 function cancelDocEdit() {
   docsState.editing = false;
-  if (docsState.selected) {
-    selectDoc(docsState.selected);
-  } else {
-    document.getElementById('docsDetail').innerHTML = '<div class="doc-empty">Select a doc from the list</div>';
-  }
+  if (docsState.selected) { selectDoc(docsState.selected); }
+  else { document.getElementById('docsDetail').innerHTML = '<div class="doc-empty">Select a doc from the list</div>'; }
+}
+
+function esc(str) {
+  var d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
 }
 
 // --- Init ---
 async function init() {
+  // Load projects from DB
+  try {
+    var projects = await apiFetch('/projects');
+    state.projects = projects;
+    // Seed active state from DB
+    projects.forEach(function(p) { state.active[p.id] = p.active; });
+  } catch (e) {
+    state.projects = [];
+  }
+
   renderGrid();
   loadCron();
 
@@ -1107,22 +621,10 @@ async function init() {
     state.runs = data;
     renderGrid();
   }).catch(function() {});
-
-  PROJECTS.forEach(function(p) {
-    apiFetch('/projects/' + p.id + '/active').then(function(data) {
-      state.active[p.id] = data.active;
-      renderGrid();
-    }).catch(function() {});
-
-    apiFetch('/projects/' + p.id + '/stories/summary').then(function(data) {
-      state.stories[p.id] = data;
-      renderGrid();
-    }).catch(function() {});
-  });
 }
 
 // --- OpenHands Dashboard ---
-var ohState = { loaded: false, logVisible: false, refreshTimer: null };
+var ohState = { loaded: false, logVisible: false };
 
 function ohAge(ts) {
   if (!ts) return '';
@@ -1153,8 +655,6 @@ function renderOhIssues(containerId, items, emptyMsg) {
 
 async function loadOpenHands() {
   document.getElementById('ohLastRefresh').textContent = 'Refreshing...';
-
-  // Load issues
   try {
     var data = await apiFetch('/openhands/issues');
     var queue = data['oh:ready'] || [];
@@ -1171,21 +671,16 @@ async function loadOpenHands() {
     renderOhIssues('ohRunning', running, 'Nothing running right now');
     renderOhIssues('ohDone', done.slice(0, 10), 'No recent completed tasks');
     renderOhIssues('ohFailed', failed.slice(0, 10), 'No failed tasks');
-
     document.getElementById('ohLastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
   } catch (e) {
     document.getElementById('ohLastRefresh').textContent = 'Error loading data';
   }
-
-  // Load container count
   try {
     var cnt = await apiFetch('/openhands/containers');
     document.getElementById('ohContainers').textContent = cnt.count + '/25 containers';
   } catch (e) {
     document.getElementById('ohContainers').textContent = '';
   }
-
-  // Refresh log if visible
   if (ohState.logVisible) loadOhLog();
 }
 
@@ -1216,14 +711,13 @@ function toggleOhLog() {
   if (ohState.logVisible) loadOhLog();
 }
 
-// Extend switchTab to handle openhands
 var _origSwitchTab = switchTab;
 switchTab = function(tab) {
   _origSwitchTab(tab);
   if (tab === 'openhands' && !ohState.loaded) {
     ohState.loaded = true;
     loadOpenHands();
-    ohState.refreshTimer = setInterval(loadOpenHands, 30000);
+    setInterval(loadOpenHands, 30000);
   }
 };
 

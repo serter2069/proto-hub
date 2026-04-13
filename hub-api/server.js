@@ -94,6 +94,21 @@ async function initTables() {
   // Add sa_schema_id column if missing
   await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS sa_schema_id TEXT`);
 
+  // SDLC stage tracking
+  await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS stage TEXT DEFAULT 'sa'`);
+  await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS stage_updated_at TIMESTAMPTZ DEFAULT NOW()`);
+  await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS paused BOOLEAN DEFAULT false`);
+
+  // SDLC cycle targets per command
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sdlc_cycles (
+      project_id TEXT NOT NULL,
+      command TEXT NOT NULL,
+      target INT NOT NULL DEFAULT 10,
+      PRIMARY KEY (project_id, command)
+    )
+  `);
+
   // Pre-populate known SA schema IDs
   await pool.query(`
     UPDATE proto_projects SET sa_schema_id = 'cmnw5361i000czmerbi780b2j' WHERE id = 'p2ptax' AND (sa_schema_id IS NULL OR sa_schema_id = '');
@@ -747,23 +762,212 @@ app.patch("/api/projects/:id", async (req, res) => {
   }
 });
 
-// GET /api/projects/:id/stages — return project stage info with SA schema
+// ─── SDLC STAGES & CYCLES ───────────────────────────────────────────────────
+
+const SDLC_STAGES = ['sa', 'brand', 'proto', 'fix', 'cicd', 'development', 'testing', 'done'];
+const STAGE_COMMANDS = {
+  sa: ['sa'],
+  brand: [],       // manual (local)
+  proto: ['proto'],
+  fix: [],         // manual (local)
+  cicd: ['cicd'],
+  development: ['audit'],
+  testing: ['dotest'],
+  done: [],
+};
+
+// GET /api/projects/:id/stages — full SDLC status
 app.get("/api/projects/:id/stages", async (req, res) => {
   const { id } = req.params;
   try {
     const { rows } = await pool.query(
-      "SELECT id, sa_schema_id FROM proto_projects WHERE id = $1",
-      [id]
+      "SELECT * FROM proto_projects WHERE id = $1", [id]
     );
     if (!rows.length) return res.status(404).json({ error: "Project not found" });
-    const row = rows[0];
-    const schemaId = row.sa_schema_id || null;
-    const schemaUrl = schemaId ? `https://diagrams.love/canvas?schema=${schemaId}` : null;
+    const project = rows[0];
+
+    const currentStage = project.stage || 'sa';
+    const currentIndex = SDLC_STAGES.indexOf(currentStage);
+
+    // Get run counts
+    const { rows: runRows } = await pool.query(
+      "SELECT command, COUNT(*) as count FROM proto_runs WHERE project_id=$1 GROUP BY command", [id]
+    );
+    const runCounts = {};
+    for (const r of runRows) runCounts[r.command] = parseInt(r.count);
+
+    // Get cycle targets
+    const { rows: cycleRows } = await pool.query(
+      "SELECT command, target FROM sdlc_cycles WHERE project_id=$1", [id]
+    );
+    const targets = {};
+    for (const r of cycleRows) targets[r.command] = r.target;
+
+    // Build stages object
+    const stages = {};
+    for (let i = 0; i < SDLC_STAGES.length; i++) {
+      const stage = SDLC_STAGES[i];
+      const commands = STAGE_COMMANDS[stage] || [];
+      const commandStatus = {};
+      let allDone = true;
+
+      for (const cmd of commands) {
+        const current = runCounts[cmd] || 0;
+        const target = targets[cmd] || 10;
+        const done = current >= target;
+        if (!done) allDone = false;
+        commandStatus[cmd] = { current, target, done };
+      }
+
+      let status;
+      if (i < currentIndex) status = 'completed';
+      else if (i === currentIndex) {
+        if (commands.length === 0) status = 'active'; // manual stages
+        else if (allDone) status = 'ready_to_advance';
+        else status = 'active';
+      }
+      else status = 'pending';
+
+      stages[stage] = { status, commands: commandStatus };
+    }
+
+    const schemaId = project.sa_schema_id || null;
     res.json({
       project: id,
+      current_stage: currentStage,
+      current_index: currentIndex,
+      total_stages: SDLC_STAGES.length,
+      paused: project.paused || false,
       sa_schema_id: schemaId,
-      sa_schema_url: schemaUrl,
+      sa_schema_url: schemaId ? `https://diagrams.love/canvas?schema=${schemaId}` : null,
+      stages,
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/projects/:id/stages — set stage manually
+app.patch("/api/projects/:id/stages", async (req, res) => {
+  const { id } = req.params;
+  const { stage, paused } = req.body;
+  try {
+    if (stage !== undefined) {
+      if (!SDLC_STAGES.includes(stage)) {
+        return res.status(400).json({ error: `Invalid stage. Must be one of: ${SDLC_STAGES.join(', ')}` });
+      }
+      await pool.query(
+        "UPDATE proto_projects SET stage=$1, stage_updated_at=NOW(), updated_at=NOW() WHERE id=$2",
+        [stage, id]
+      );
+    }
+    if (paused !== undefined) {
+      await pool.query(
+        "UPDATE proto_projects SET paused=$1, updated_at=NOW() WHERE id=$2",
+        [!!paused, id]
+      );
+    }
+    const { rows } = await pool.query("SELECT * FROM proto_projects WHERE id=$1", [id]);
+    res.json({ project: id, stage: rows[0]?.stage, paused: rows[0]?.paused, updated: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/projects/:id/stages/advance — auto-advance if current stage done
+app.post("/api/projects/:id/stages/advance", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query("SELECT * FROM proto_projects WHERE id=$1", [id]);
+    if (!rows.length) return res.status(404).json({ error: "Project not found" });
+
+    const currentStage = rows[0].stage || 'sa';
+    const currentIndex = SDLC_STAGES.indexOf(currentStage);
+
+    if (currentIndex >= SDLC_STAGES.length - 1) {
+      return res.json({ project: id, stage: currentStage, advanced: false, reason: 'already done' });
+    }
+
+    // Check if all commands in current stage are done
+    const commands = STAGE_COMMANDS[currentStage] || [];
+    if (commands.length === 0) {
+      // Manual stage — can always advance
+      const nextStage = SDLC_STAGES[currentIndex + 1];
+      await pool.query("UPDATE proto_projects SET stage=$1, stage_updated_at=NOW() WHERE id=$2", [nextStage, id]);
+      return res.json({ project: id, stage: nextStage, advanced: true, from: currentStage });
+    }
+
+    for (const cmd of commands) {
+      const { rows: countRows } = await pool.query(
+        "SELECT COUNT(*) as c FROM proto_runs WHERE project_id=$1 AND command=$2", [id, cmd]
+      );
+      const { rows: targetRows } = await pool.query(
+        "SELECT target FROM sdlc_cycles WHERE project_id=$1 AND command=$2", [id, cmd]
+      );
+      const current = parseInt(countRows[0].c);
+      const target = targetRows[0]?.target || 10;
+      if (current < target) {
+        return res.json({ project: id, stage: currentStage, advanced: false, reason: `${cmd}: ${current}/${target}` });
+      }
+    }
+
+    const nextStage = SDLC_STAGES[currentIndex + 1];
+    await pool.query("UPDATE proto_projects SET stage=$1, stage_updated_at=NOW() WHERE id=$2", [nextStage, id]);
+    res.json({ project: id, stage: nextStage, advanced: true, from: currentStage });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/projects/:id/cycles — all commands with current/target
+app.get("/api/projects/:id/cycles", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows: runRows } = await pool.query(
+      "SELECT command, COUNT(*) as count FROM proto_runs WHERE project_id=$1 GROUP BY command", [id]
+    );
+    const { rows: targetRows } = await pool.query(
+      "SELECT command, target FROM sdlc_cycles WHERE project_id=$1", [id]
+    );
+
+    const runCounts = {};
+    for (const r of runRows) runCounts[r.command] = parseInt(r.count);
+    const targets = {};
+    for (const r of targetRows) targets[r.command] = r.target;
+
+    // Merge all known commands
+    const allCommands = new Set([...Object.keys(runCounts), ...Object.keys(targets)]);
+    const cycles = {};
+    for (const cmd of allCommands) {
+      const current = runCounts[cmd] || 0;
+      const target = targets[cmd] || 10;
+      // Find which stage this command belongs to
+      let stage = 'unknown';
+      for (const [s, cmds] of Object.entries(STAGE_COMMANDS)) {
+        if (cmds.includes(cmd)) { stage = s; break; }
+      }
+      cycles[cmd] = { current, target, done: current >= target, stage };
+    }
+
+    res.json({ project: id, cycles });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/projects/:id/cycles — set target for a command
+app.patch("/api/projects/:id/cycles", async (req, res) => {
+  const { id } = req.params;
+  const { command, target } = req.body;
+  if (!command || target === undefined) {
+    return res.status(400).json({ error: "command and target required" });
+  }
+  try {
+    await pool.query(`
+      INSERT INTO sdlc_cycles (project_id, command, target) VALUES ($1, $2, $3)
+      ON CONFLICT (project_id, command) DO UPDATE SET target = $3
+    `, [id, command, parseInt(target)]);
+    res.json({ project: id, command, target: parseInt(target) });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

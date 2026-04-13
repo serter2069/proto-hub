@@ -269,9 +269,7 @@ app.get("/api/runs/needs-work", async (req, res) => {
   const needsWork = [];
   for (const project of projects) {
     const protoCount = (counts[project] && counts[project]["proto"]) || 0;
-    const checkCount = (counts[project] && counts[project]["proto-check"]) || 0;
     if (protoCount < 10) needsWork.push({ project, command: "proto", count: protoCount });
-    else if (checkCount < 10) needsWork.push({ project, command: "proto-check", count: checkCount });
   }
 
   needsWork.sort((a, b) => {

@@ -136,12 +136,45 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .oh-log-line.done { color: #86efac; } .oh-log-line.fail { color: #fca5a5; } .oh-log-line.start { color: #fde68a; }
 .oh-log-toggle { font-size: 12px; color: #2563eb; cursor: pointer; user-select: none; margin-bottom: 8px; display: inline-block; }
 .oh-log-toggle:hover { text-decoration: underline; }
+
+/* SDLC Stage Pipeline */
+.sdlc-row { margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+.sdlc-pipeline { display: flex; gap: 2px; margin-bottom: 8px; }
+.sdlc-pip { flex: 1; text-align: center; padding: 3px 1px; border-radius: 3px; font-size: 8px; font-weight: 700; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+.sdlc-pip:hover { transform: scale(1.15); box-shadow: 0 1px 4px rgba(0,0,0,0.15); z-index: 1; position: relative; }
+.sdlc-cycles { margin-bottom: 8px; }
+.sdlc-cycle { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.sdlc-cycle-name { font-size: 11px; color: #666; font-family: ui-monospace, monospace; min-width: 55px; }
+.sdlc-progress-track { flex: 1; height: 5px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.sdlc-progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.sdlc-cycle-count { font-size: 10px; color: #999; min-width: 40px; text-align: right; }
+.sdlc-controls { display: flex; gap: 4px; flex-wrap: wrap; }
+.sdlc-btn { padding: 3px 8px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; color: #555; font-size: 10px; cursor: pointer; font-family: inherit; transition: all 0.1s; }
+.sdlc-btn:hover { border-color: #9ca3af; }
+.sdlc-btn:disabled { opacity: 0.4; cursor: default; }
+.sdlc-btn.advance { color: #2563eb; border-color: #bfdbfe; }
+.sdlc-btn.advance:hover { background: #eff6ff; }
+
+/* New Project Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal-box { background: #fff; border-radius: 12px; padding: 28px 32px; width: 420px; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+.modal-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+.modal-field { margin-bottom: 14px; }
+.modal-field label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.modal-field input { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; outline: none; font-family: inherit; }
+.modal-field input:focus { border-color: #2563eb; }
+.modal-field .hint { font-size: 11px; color: #999; margin-top: 2px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 </style>
 </head>
 <body>
 
 <h1><a href="/" style="color:inherit;text-decoration:none;">Proto Hub</a></h1>
-<p class="subtitle">All project prototypes</p>
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:32px">
+  <p class="subtitle" style="margin-bottom:0">All project prototypes</p>
+  <button class="btn btn-primary" onclick="openNewProject()" style="font-size:13px;padding:7px 16px">+ New Project</button>
+</div>
 
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('projects')">Projects</button>
@@ -218,22 +251,37 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
   </div>
 </div>
 
+<div class="modal-overlay" id="newProjectModal">
+  <div class="modal-box">
+    <h2>New Project</h2>
+    <div class="modal-field">
+      <label>Project ID</label>
+      <input type="text" id="npId" placeholder="my-project" pattern="[a-z0-9-]+">
+      <div class="hint">Lowercase, hyphens only. Must match GitHub repo name.</div>
+    </div>
+    <div class="modal-field">
+      <label>Display Name</label>
+      <input type="text" id="npName" placeholder="My Project">
+    </div>
+    <div class="modal-field">
+      <label>URL / Domain</label>
+      <input type="text" id="npUrl" placeholder="myproject.smartlaunchhub.com">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeNewProject()">Cancel</button>
+      <button class="btn btn-save" id="npSaveBtn" onclick="saveNewProject()">Create</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container" id="toasts"></div>
 
 <script>
 const API = '/hub/api';
 
-const PROJECT_META = {
-  'reference':     { name: 'Reference Template', url: 'Mandatory pages template', href: '/reference/' },
-  'p2ptax':        { name: 'P2PTax',             url: 'p2ptax.smartlaunchhub.com', href: '/p2ptax/' },
-  'avito-georgia': { name: 'Avito Georgia',       url: 'avito-georgia.smartlaunchhub.com', href: '/avito-georgia/' },
-  'chesstourism':  { name: 'Chess Tourism',       url: 'chesstourism.smartlaunchhub.com', href: '/chesstourism/' },
-  'daterabbit':    { name: 'DateRabbit',          url: 'daterabbit.smartlaunchhub.com', href: '/daterabbit/' },
-  'gun':           { name: 'Gun Market',          url: 'arms-market.smartlaunchhub.com', href: '/gun/' },
-  'dressit':       { name: 'DressIT',             url: 'dressitnow.com', href: '/dressit/' },
-};
+let PROJECT_META = {};
 
-const state = { runs: {}, active: {}, projects: [] };
+const state = { runs: {}, active: {}, projects: [], stages: {} };
 
 function toast(msg, isError) {
   const el = document.createElement('div');
@@ -261,6 +309,10 @@ function esc(str) {
   return d.innerHTML;
 }
 
+const SDLC_STAGES = ['sa','brand','proto','fix','cicd','development','testing','done'];
+const SDLC_COLORS = { sa:'#8b5cf6', brand:'#f59e0b', proto:'#3b82f6', fix:'#ef4444', cicd:'#6366f1', development:'#10b981', testing:'#f97316', done:'#22c55e' };
+const SDLC_LABELS = { sa:'SA', brand:'Brand', proto:'Proto', fix:'Fix', cicd:'CI/CD', development:'Dev', testing:'Test', done:'Done' };
+
 // ── Cards ─────────────────────────────────────────────────────────────────────
 
 function renderCard(p) {
@@ -269,6 +321,44 @@ function renderCard(p) {
   const sa = runs.sa || 0;
   const isActive = state.active[p.id] !== false;
   const meta = PROJECT_META[p.id] || { name: p.id, url: '', href: '#' };
+  const sd = state.stages[p.id] || {};
+  const currentStage = sd.current_stage || 'sa';
+  const stages = sd.stages || {};
+  const currentIdx = SDLC_STAGES.indexOf(currentStage);
+
+  // Pipeline badges (clickable to set stage)
+  let pipeline = SDLC_STAGES.map((s, i) => {
+    const color = SDLC_COLORS[s];
+    const isCurrent = s === currentStage;
+    const isPast = i < currentIdx;
+    const bg = isCurrent ? color : (isPast ? color + '33' : '#e5e7eb');
+    const textColor = isCurrent ? '#fff' : (isPast ? color : '#bbb');
+    return '<span class="sdlc-pip" style="background:' + bg + ';color:' + textColor + '" title="Click to switch to ' + SDLC_LABELS[s] + '" onclick="event.preventDefault();event.stopPropagation();sdlcSetStage(\'' + p.id + '\',\'' + s + '\')">' + SDLC_LABELS[s] + '</span>';
+  }).join('');
+
+  // Cycle progress for current stage
+  let cyclesHtml = '';
+  const stageInfo = stages[currentStage];
+  if (stageInfo && stageInfo.commands) {
+    for (const [cmd, info] of Object.entries(stageInfo.commands)) {
+      const cur = info.current || 0;
+      const tgt = info.target || 10;
+      const pct = Math.min(100, Math.round((cur / tgt) * 100));
+      const doneFlag = info.done;
+      const color = doneFlag ? '#22c55e' : (SDLC_COLORS[currentStage] || '#3b82f6');
+      cyclesHtml += '<div class="sdlc-cycle">' +
+        '<span class="sdlc-cycle-name">/' + esc(cmd) + '</span>' +
+        '<div class="sdlc-progress-track"><div class="sdlc-progress-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+        '<span class="sdlc-cycle-count">' + cur + '/' + tgt + (doneFlag ? ' ✓' : '') + '</span>' +
+      '</div>';
+    }
+  }
+
+  // Controls
+  let controls = '';
+  if (isActive && currentStage !== 'done') {
+    controls += '<button class="sdlc-btn advance" onclick="event.preventDefault();event.stopPropagation();sdlcAction(\'' + p.id + '\',\'advance\')">Next →</button>';
+  }
 
   const card = document.createElement('a');
   card.href = meta.href;
@@ -292,6 +382,11 @@ function renderCard(p) {
         '<div class="stat-num ' + statColor(sa) + '">' + sa + '</div>' +
         '<div class="stat-label">sa</div>' +
       '</div>' +
+    '</div>' +
+    '<div class="sdlc-row">' +
+      '<div class="sdlc-pipeline">' + pipeline + '</div>' +
+      (cyclesHtml ? '<div class="sdlc-cycles">' + cyclesHtml + '</div>' : '') +
+      '<div class="sdlc-controls">' + controls + '</div>' +
     '</div>';
   return card;
 }
@@ -314,6 +409,40 @@ async function toggleActive(id) {
     renderGrid();
     toast(id + (!current ? ' activated' : ' deactivated'));
   } catch (e) { toast('Failed to toggle ' + id, true); }
+}
+
+async function sdlcAction(projectId, action) {
+  try {
+    const url = API + '/projects/' + projectId + '/stages/advance';
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error || 'Action failed', true);
+    } else {
+      const data = await res.json();
+      toast(projectId + ': ' + (data.from || '') + ' → ' + (data.stage || ''));
+    }
+    await loadStages();
+    renderGrid();
+  } catch (e) { toast('Error: ' + e.message, true); }
+}
+
+async function sdlcSetStage(projectId, stage) {
+  try {
+    const res = await fetch(API + '/projects/' + projectId + '/stages', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage: stage })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error || 'Failed to set stage', true);
+    } else {
+      toast(projectId + ' → ' + stage);
+    }
+    await loadStages();
+    renderGrid();
+  } catch (e) { toast('Error: ' + e.message, true); }
 }
 
 function editStat(projectId, command, currentValue, blockEl) {
@@ -565,21 +694,44 @@ async function cancelEdit(type, name) {
   }
 }
 
+// ── SDLC Stages ─────────────────────────────────────────────────────────────
+
+async function loadStages() {
+  try {
+    const projects = state.projects;
+    const results = await Promise.all(
+      projects.map(p =>
+        apiFetch('/projects/' + encodeURIComponent(p.id) + '/stages').catch(() => ({}))
+      )
+    );
+    projects.forEach((p, i) => { state.stages[p.id] = results[i]; });
+  } catch (e) {}
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {
   try {
     const projects = await apiFetch('/projects');
     state.projects = projects;
-    projects.forEach(p => { state.active[p.id] = p.active; });
+    projects.forEach(p => {
+      state.active[p.id] = p.active;
+      // Build PROJECT_META from API data
+      PROJECT_META[p.id] = {
+        name: p.name || p.id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        url: p.url || '',
+        href: '/' + p.id + '/'
+      };
+    });
   } catch (e) { state.projects = []; }
 
   renderGrid();
 
-  apiFetch('/runs/counts').then(data => {
-    state.runs = data;
-    renderGrid();
-  }).catch(() => {});
+  // Load runs and stages in parallel
+  Promise.all([
+    apiFetch('/runs/counts').then(data => { state.runs = data; }).catch(() => {}),
+    loadStages()
+  ]).then(() => renderGrid());
 }
 
 // ── OpenHands ─────────────────────────────────────────────────────────────────
@@ -648,6 +800,54 @@ function toggleOhLog() {
   ohState.logVisible = !ohState.logVisible;
   document.getElementById('ohLog').style.display = ohState.logVisible ? 'block' : 'none';
   if (ohState.logVisible) loadOhLog();
+}
+
+function openNewProject() {
+  document.getElementById('npId').value = '';
+  document.getElementById('npName').value = '';
+  document.getElementById('npUrl').value = '';
+  document.getElementById('newProjectModal').classList.add('active');
+  document.getElementById('npId').focus();
+}
+
+function closeNewProject() {
+  document.getElementById('newProjectModal').classList.remove('active');
+}
+
+document.getElementById('newProjectModal').addEventListener('click', function(e) {
+  if (e.target === this) closeNewProject();
+});
+
+async function saveNewProject() {
+  const id = document.getElementById('npId').value.trim().toLowerCase();
+  const name = document.getElementById('npName').value.trim();
+  const url = document.getElementById('npUrl').value.trim();
+
+  if (!id || !/^[a-z0-9-]+$/.test(id)) {
+    toast('ID must be lowercase with hyphens only', true);
+    return;
+  }
+
+  const btn = document.getElementById('npSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  try {
+    await fetch(API + '/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name: name || undefined, url: url || undefined })
+    }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); });
+
+    toast('Created: ' + id);
+    closeNewProject();
+    await init();
+  } catch (e) {
+    toast('Failed to create project', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create';
+  }
 }
 
 init();

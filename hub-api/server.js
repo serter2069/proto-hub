@@ -91,6 +91,18 @@ async function initTables() {
     ON CONFLICT DO NOTHING
   `);
 
+  // Add sa_schema_id column if missing
+  await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS sa_schema_id TEXT`);
+
+  // Pre-populate known SA schema IDs
+  await pool.query(`
+    UPDATE proto_projects SET sa_schema_id = 'cmnw5361i000czmerbi780b2j' WHERE id = 'p2ptax' AND (sa_schema_id IS NULL OR sa_schema_id = '');
+    UPDATE proto_projects SET sa_schema_id = 'cmnw53r4l000izmerguf0hp0l' WHERE id = 'daterabbit' AND (sa_schema_id IS NULL OR sa_schema_id = '');
+    UPDATE proto_projects SET sa_schema_id = 'cmnw53uk9000kzmerv59t1mwa' WHERE id = 'gun' AND (sa_schema_id IS NULL OR sa_schema_id = '');
+    UPDATE proto_projects SET sa_schema_id = 'cmnw53bop000ezmerdh298uvt' WHERE id = 'avito-georgia' AND (sa_schema_id IS NULL OR sa_schema_id = '');
+    UPDATE proto_projects SET sa_schema_id = 'cmnw53ehn000gzmer2v5e15cz' WHERE id = 'chesstourism' AND (sa_schema_id IS NULL OR sa_schema_id = '');
+  `);
+
   console.log("All tables ready");
 }
 
@@ -732,6 +744,45 @@ app.patch("/api/projects/:id", async (req, res) => {
     `, [id, active]);
 
     res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/projects/:id/stages — return project stage info with SA schema
+app.get("/api/projects/:id/stages", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, sa_schema_id FROM proto_projects WHERE id = $1",
+      [id]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Project not found" });
+    const row = rows[0];
+    const schemaId = row.sa_schema_id || null;
+    const schemaUrl = schemaId ? `https://diagrams.love/canvas?schema=${schemaId}` : null;
+    res.json({
+      project: id,
+      sa_schema_id: schemaId,
+      sa_schema_url: schemaUrl,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/projects/:id/sa-schema — update SA schema ID
+app.patch("/api/projects/:id/sa-schema", async (req, res) => {
+  const { id } = req.params;
+  const { schema_id } = req.body;
+  if (!schema_id && schema_id !== '') return res.status(400).json({ error: "schema_id required" });
+  try {
+    await pool.query(
+      "UPDATE proto_projects SET sa_schema_id = $1 WHERE id = $2",
+      [schema_id || null, id]
+    );
+    const schemaUrl = schema_id ? `https://diagrams.love/canvas?schema=${schema_id}` : null;
+    res.json({ project: id, schema_id: schema_id || null, url: schemaUrl });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

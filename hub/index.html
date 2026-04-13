@@ -11,12 +11,6 @@ body { background: #f5f5f5; color: #111; font-family: -apple-system, BlinkMacSys
 h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .subtitle { color: #666; margin-bottom: 32px; font-size: 14px; }
 
-/* Cron Monitor */
-.cron-monitor { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 32px; max-width: 1200px; }
-.cron-monitor h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
-.cron-line { font-size: 13px; color: #444; margin-bottom: 6px; }
-.cron-line strong { color: #111; }
-
 /* Grid */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; max-width: 1200px; }
 
@@ -35,7 +29,7 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .inactive-label { font-size: 11px; color: #9ca3af; margin-right: 6px; }
 
 /* Stats row */
-.stats-row { display: flex; gap: 12px; margin-bottom: 20px; }
+.stats-row { display: flex; gap: 12px; }
 .stat-block { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
 .stat-block:hover { border-color: #93c5fd; background: #f0f7ff; }
 .stat-num { font-size: 36px; font-weight: 700; line-height: 1; }
@@ -43,30 +37,7 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .stat-num.mid { color: #ca8a04; }
 .stat-num.low { color: #dc2626; }
 .stat-label { font-size: 10px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
-
-/* Stat inline edit */
 .stat-edit-input { width: 60px; font-size: 28px; font-weight: 700; border: 2px solid #2563eb; border-radius: 6px; padding: 2px 6px; text-align: center; outline: none; background: #fff; color: #111; }
-
-/* Log drawer */
-.log-toggle { font-size: 12px; color: #2563eb; cursor: pointer; user-select: none; }
-.log-toggle:hover { text-decoration: underline; }
-.log-drawer { display: none; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; margin-top: 10px; max-height: 260px; overflow-y: auto; }
-.log-drawer.open { display: block; }
-.log-entry { font-size: 12px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
-.log-entry:last-child { border-bottom: none; }
-.log-ts { color: #888; margin-right: 6px; }
-.log-badge { display: inline-block; font-size: 10px; font-weight: 700; border-radius: 3px; padding: 1px 5px; margin-right: 4px; }
-.log-badge.done { background: #dcfce7; color: #16a34a; }
-.log-badge.fail { background: #fef2f2; color: #dc2626; }
-.log-badge.start { background: #fefce8; color: #ca8a04; }
-.log-links { font-size: 11px; color: #2563eb; margin-top: 2px; }
-.log-links a { color: #2563eb; text-decoration: none; margin-right: 8px; }
-.log-links a:hover { text-decoration: underline; }
-.log-loading { font-size: 12px; color: #999; }
-
-/* Card footer */
-.card-cta { display: inline-block; font-size: 12px; color: #2563eb; text-decoration: none; margin-top: 14px; }
-.card-cta:hover { text-decoration: underline; }
 
 /* Toast */
 .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 100; display: flex; flex-direction: column; gap: 8px; }
@@ -75,53 +46,62 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Loading pulse */
-.loading { color: #aaa; font-size: 12px; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 .pulse { animation: pulse 1.5s ease-in-out infinite; }
 
 /* Tabs */
 .tabs { display: flex; gap: 4px; margin-bottom: 24px; max-width: 1200px; }
-.tab-btn { padding: 8px 20px; font-size: 14px; font-weight: 600; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; transition: all 0.15s; color: #374151; }
+.tab-btn { padding: 8px 20px; font-size: 14px; font-weight: 600; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; transition: all 0.15s; color: #374151; text-decoration: none; display: inline-block; line-height: 1.4; }
 .tab-btn:hover { background: #f3f4f6; }
 .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* Docs */
-.docs-search { width: 100%; max-width: 400px; padding: 8px 14px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; margin-bottom: 16px; }
-.docs-search:focus { border-color: #2563eb; }
-.docs-layout { display: flex; gap: 20px; max-width: 1200px; }
-.docs-list { width: 320px; flex-shrink: 0; max-height: 70vh; overflow-y: auto; }
-.docs-detail { flex: 1; min-width: 0; }
-.doc-item { padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; background: #fff; }
-.doc-item:hover { border-color: #93c5fd; background: #f9fafb; }
-.doc-item.selected { border-color: #2563eb; background: #eff6ff; }
-.doc-item-name { font-size: 14px; font-weight: 600; color: #111; }
-.doc-item-desc { font-size: 12px; color: #666; margin-top: 2px; }
-.doc-item-date { font-size: 11px; color: #999; margin-top: 4px; }
-.doc-view { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; }
-.doc-view h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.doc-view-desc { font-size: 13px; color: #666; margin-bottom: 12px; }
-.doc-view-date { font-size: 11px; color: #999; margin-bottom: 16px; }
-.doc-content { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.6; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; max-height: 50vh; overflow-y: auto; }
-.doc-actions { display: flex; gap: 8px; margin-bottom: 16px; }
-.doc-btn { padding: 6px 16px; font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
-.doc-btn-edit { background: #2563eb; color: #fff; }
-.doc-btn-edit:hover { background: #1d4ed8; }
-.doc-btn-save { background: #16a34a; color: #fff; }
-.doc-btn-save:hover { background: #15803d; }
-.doc-btn-cancel { background: #e5e7eb; color: #374151; }
-.doc-btn-cancel:hover { background: #d1d5db; }
-.doc-btn-new { background: #2563eb; color: #fff; }
-.doc-btn-new:hover { background: #1d4ed8; }
-.doc-edit-form { display: flex; flex-direction: column; gap: 10px; }
-.doc-edit-form label { font-size: 12px; font-weight: 600; color: #374151; }
-.doc-edit-form input { font-size: 13px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
-.doc-edit-form input:focus { border-color: #2563eb; }
-.doc-edit-form textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; min-height: 300px; resize: vertical; line-height: 1.5; }
-.doc-edit-form textarea:focus { border-color: #2563eb; }
-.doc-empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }
-@media (max-width: 768px) { .docs-layout { flex-direction: column; } .docs-list { width: 100%; max-height: 40vh; } }
+/* Instructions & Commands layout */
+.ic-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1200px; }
+@media (max-width: 900px) { .ic-layout { grid-template-columns: 1fr; } }
+.ic-col h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #111; }
+
+/* Item list (shared for docs and commands) */
+.item-list { max-height: calc(100vh - 260px); overflow-y: auto; }
+.item-card { padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; background: #fff; }
+.item-card:hover { border-color: #93c5fd; background: #f9fafb; }
+.item-card.selected { border-color: #2563eb; background: #eff6ff; }
+.item-name { font-size: 14px; font-weight: 600; color: #111; }
+.item-desc { font-size: 12px; color: #666; margin-top: 2px; }
+.item-date { font-size: 11px; color: #999; margin-top: 4px; }
+
+/* Detail panel */
+.detail-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; max-height: calc(100vh - 220px); overflow-y: auto; }
+.detail-panel h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.detail-desc { font-size: 13px; color: #666; margin-bottom: 8px; }
+.detail-date { font-size: 11px; color: #999; margin-bottom: 16px; }
+.detail-content { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.6; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; max-height: 50vh; overflow-y: auto; }
+.detail-actions { display: flex; gap: 8px; margin-bottom: 16px; }
+.detail-empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+
+/* Edit form */
+.edit-form { display: flex; flex-direction: column; gap: 10px; }
+.edit-form label { font-size: 12px; font-weight: 600; color: #374151; }
+.edit-form input { font-size: 13px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
+.edit-form input:focus { border-color: #2563eb; }
+.edit-form textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; min-height: 300px; resize: vertical; line-height: 1.5; }
+.edit-form textarea:focus { border-color: #2563eb; }
+
+/* Buttons */
+.btn { padding: 6px 16px; font-size: 12px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-save { background: #16a34a; color: #fff; }
+.btn-save:hover { background: #15803d; }
+.btn-cancel { background: #e5e7eb; color: #374151; }
+.btn-cancel:hover { background: #d1d5db; }
+.btn-new { background: #2563eb; color: #fff; }
+.btn-new:hover { background: #1d4ed8; }
+
+/* Search */
+.search-bar { width: 100%; padding: 8px 14px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; margin-bottom: 12px; }
+.search-bar:focus { border-color: #2563eb; }
 
 /* OpenHands Dashboard */
 .oh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-width: 1200px; margin-bottom: 24px; }
@@ -135,10 +115,7 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .oh-section { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px 24px; max-width: 1200px; margin-bottom: 16px; }
 .oh-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .oh-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.oh-dot.queue { background: #ca8a04; }
-.oh-dot.running { background: #2563eb; }
-.oh-dot.done { background: #16a34a; }
-.oh-dot.failed { background: #dc2626; }
+.oh-dot.queue { background: #ca8a04; } .oh-dot.running { background: #2563eb; } .oh-dot.done { background: #16a34a; } .oh-dot.failed { background: #dc2626; }
 .oh-empty { font-size: 13px; color: #999; padding: 8px 0; }
 .oh-issue { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
 .oh-issue:last-child { border-bottom: none; }
@@ -156,9 +133,7 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 .oh-containers { font-size: 13px; color: #2563eb; font-weight: 600; }
 .oh-log { background: #111; border-radius: 10px; padding: 16px; max-width: 1200px; max-height: 300px; overflow-y: auto; margin-bottom: 16px; }
 .oh-log-line { font-family: ui-monospace, monospace; font-size: 12px; color: #d1d5db; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
-.oh-log-line.done { color: #86efac; }
-.oh-log-line.fail { color: #fca5a5; }
-.oh-log-line.start { color: #fde68a; }
+.oh-log-line.done { color: #86efac; } .oh-log-line.fail { color: #fca5a5; } .oh-log-line.start { color: #fde68a; }
 .oh-log-toggle { font-size: 12px; color: #2563eb; cursor: pointer; user-select: none; margin-bottom: 8px; display: inline-block; }
 .oh-log-toggle:hover { text-decoration: underline; }
 </style>
@@ -166,33 +141,41 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 <body>
 
 <h1>Proto Hub</h1>
-<p class="subtitle">All project prototypes — staging iframes, no login required</p>
+<p class="subtitle">All project prototypes</p>
 
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('projects')">Projects</button>
-  <button class="tab-btn" onclick="switchTab('docs')">Docs</button>
+  <button class="tab-btn" onclick="switchTab('instructions')">Instructions &amp; Commands</button>
   <button class="tab-btn" onclick="switchTab('openhands')">OpenHands</button>
 </div>
 
 <div class="tab-panel active" id="panel-projects">
-  <div class="cron-monitor" id="cronMonitor">
-    <h2>Automation Status</h2>
-    <div id="cronContent" class="loading pulse">Loading...</div>
-  </div>
   <div class="grid" id="projectGrid"></div>
 </div>
 
-<div class="tab-panel" id="panel-docs">
-  <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;max-width:1200px">
-    <input class="docs-search" id="docsSearch" placeholder="Search docs..." oninput="filterDocs()">
-    <button class="doc-btn doc-btn-new" onclick="newDoc()">+ New Doc</button>
-  </div>
-  <div class="docs-layout">
-    <div class="docs-list" id="docsList"></div>
-    <div class="docs-detail" id="docsDetail">
-      <div class="doc-empty">Select a doc from the list</div>
+<div class="tab-panel" id="panel-instructions">
+  <div class="ic-layout">
+    <!-- Instructions (docs) -->
+    <div class="ic-col">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2>Instructions</h2>
+        <button class="btn btn-new" onclick="newDoc()">+ New</button>
+      </div>
+      <input class="search-bar" id="docsSearch" placeholder="Search instructions..." oninput="filterDocs()">
+      <div class="item-list" id="docsList"></div>
+    </div>
+    <!-- Commands registry -->
+    <div class="ic-col">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2>Commands</h2>
+        <button class="btn btn-new" onclick="newCmd()">+ New</button>
+      </div>
+      <input class="search-bar" id="cmdsSearch" placeholder="Search commands..." oninput="filterCmds()">
+      <div class="item-list" id="cmdsList"></div>
     </div>
   </div>
+  <!-- Detail panel spans full width when something is selected -->
+  <div id="detailPanel" style="max-width:1200px;margin-top:20px"></div>
 </div>
 
 <div class="tab-panel" id="panel-openhands">
@@ -206,37 +189,31 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
       <span class="oh-refresh" onclick="loadOpenHands()">&#8635; Refresh</span>
     </div>
   </div>
-
   <div class="oh-grid">
     <div class="oh-stat queue"><div class="oh-stat-num" id="ohCountQueue">&mdash;</div><div class="oh-stat-label">In Queue</div></div>
     <div class="oh-stat running"><div class="oh-stat-num" id="ohCountRunning">&mdash;</div><div class="oh-stat-label">Running</div></div>
     <div class="oh-stat done"><div class="oh-stat-num" id="ohCountDone">&mdash;</div><div class="oh-stat-label">Done (recent)</div></div>
     <div class="oh-stat failed"><div class="oh-stat-num" id="ohCountFailed">&mdash;</div><div class="oh-stat-label">Failed (recent)</div></div>
   </div>
-
   <div class="oh-section">
-    <h3><span class="oh-dot running"></span> Running <small id="ohRunningNote" style="font-size:11px;color:#999;font-weight:400"></small></h3>
+    <h3><span class="oh-dot running"></span> Running</h3>
     <div id="ohRunning"><div class="oh-empty pulse">Loading...</div></div>
   </div>
-
   <div class="oh-section">
     <h3><span class="oh-dot queue"></span> Queue (oh:ready)</h3>
     <div id="ohQueue"><div class="oh-empty pulse">Loading...</div></div>
   </div>
-
   <div class="oh-section">
     <h3><span class="oh-dot done"></span> Recently Done</h3>
     <div id="ohDone"><div class="oh-empty pulse">Loading...</div></div>
   </div>
-
   <div class="oh-section">
     <h3><span class="oh-dot failed"></span> Failed / Abandoned</h3>
     <div id="ohFailed"><div class="oh-empty pulse">Loading...</div></div>
   </div>
-
   <div>
     <span class="oh-log-toggle" onclick="toggleOhLog()">&#9660; Live Log (oh-watcher)</span>
-    <div class="oh-log" id="ohLog" style="display:none"><div class="oh-empty" style="color:#666">Click to load log</div></div>
+    <div class="oh-log" id="ohLog" style="display:none"></div>
   </div>
 </div>
 
@@ -245,7 +222,6 @@ h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: #111; }
 <script>
 const API = '/hub/api';
 
-// Display metadata for known projects
 const PROJECT_META = {
   'reference':     { name: 'Reference Template', url: 'Mandatory pages template', href: '/reference/' },
   'p2ptax':        { name: 'P2PTax',             url: 'p2ptax.smartlaunchhub.com', href: '/p2ptax/' },
@@ -256,7 +232,7 @@ const PROJECT_META = {
   'dressit':       { name: 'DressIT',             url: 'dressitnow.com', href: '/dressit/' },
 };
 
-const state = { runs: {}, active: {}, projects: [], logCache: {} };
+const state = { runs: {}, active: {}, projects: [] };
 
 function toast(msg, isError) {
   const el = document.createElement('div');
@@ -272,47 +248,25 @@ function statColor(n) {
   return 'low';
 }
 
-function fmtTime(ts) {
-  if (!ts) return '---';
-  const d = new Date(ts);
-  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-}
-
-async function apiFetch(path) {
-  const res = await fetch(API + path);
+async function apiFetch(path, opts) {
+  const res = await fetch(API + path, opts);
   if (!res.ok) throw new Error(res.status);
   return res.json();
 }
 
-// --- Cron Monitor ---
-async function loadCron() {
-  const el = document.getElementById('cronContent');
-  try {
-    const data = await apiFetch('/cron/last-run');
-    const sc = data.smartCron || {};
-    const oh = data.ohWatcher || {};
-    const lh = oh.lastHour || {};
-    el.className = '';
-    el.innerHTML =
-      '<div class="cron-line"><strong>Smart-cron:</strong> last run ' + fmtTime(sc.lastRun) +
-      ' &mdash; created ' + (sc.createdIssues || []).length + ' issues</div>' +
-      '<div class="cron-line"><strong>OH-watcher:</strong> last poll ' + fmtTime(oh.lastPoll) +
-      ' &mdash; ' + (lh.start || 0) + ' jobs running</div>' +
-      '<div class="cron-line">Last hour: <strong>' + (lh.done || 0) + '</strong> DONE / <strong>' +
-      (lh.fail || 0) + '</strong> FAIL</div>';
-  } catch (e) {
-    el.className = '';
-    el.textContent = 'Error loading cron status';
-  }
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
 }
 
-// --- Render ---
+// ── Cards ─────────────────────────────────────────────────────────────────────
+
 function renderCard(p) {
   const runs = state.runs[p.id] || {};
   const proto = runs.proto || 0;
   const sa = runs.sa || 0;
   const isActive = state.active[p.id] !== false;
-
   const meta = PROJECT_META[p.id] || { name: p.id, url: '', href: '#' };
 
   const card = document.createElement('a');
@@ -321,40 +275,36 @@ function renderCard(p) {
   card.id = 'card-' + p.id;
   card.innerHTML =
     '<div class="card-header">' +
-      '<div class="card-name">' + meta.name + '</div>' +
+      '<div class="card-name">' + esc(meta.name) + '</div>' +
       '<div style="display:flex;align-items:center;gap:6px">' +
         (!isActive ? '<span class="inactive-label">inactive</span>' : '') +
-        '<div class="toggle ' + (isActive ? 'active' : '') + '" onclick="event.preventDefault();event.stopPropagation();toggleActive(\'' + p.id + '\')" title="' + (isActive ? 'Active' : 'Inactive') + '"></div>' +
+        '<div class="toggle ' + (isActive ? 'active' : '') + '" onclick="event.preventDefault();event.stopPropagation();toggleActive(\'' + p.id + '\')" title="Toggle active"></div>' +
       '</div>' +
     '</div>' +
-    '<div class="card-url">' + meta.url + '</div>' +
+    '<div class="card-url">' + esc(meta.url) + '</div>' +
     '<div class="stats-row">' +
       '<div class="stat-block" onclick="event.preventDefault();event.stopPropagation();editStat(\'' + p.id + '\',\'proto\',' + proto + ',this)" title="Click to edit">' +
-        '<div class="stat-num ' + statColor(proto) + '" id="stat-proto-' + p.id + '">' + proto + '</div>' +
+        '<div class="stat-num ' + statColor(proto) + '">' + proto + '</div>' +
         '<div class="stat-label">proto</div>' +
       '</div>' +
       '<div class="stat-block" onclick="event.preventDefault();event.stopPropagation();editStat(\'' + p.id + '\',\'sa\',' + sa + ',this)" title="Click to edit">' +
-        '<div class="stat-num ' + statColor(sa) + '" id="stat-sa-' + p.id + '">' + sa + '</div>' +
+        '<div class="stat-num ' + statColor(sa) + '">' + sa + '</div>' +
         '<div class="stat-label">sa</div>' +
       '</div>' +
-    '</div>' +
-    '<div class="log-toggle" onclick="event.preventDefault();event.stopPropagation();toggleLogs(\'' + p.id + '\')">&#9660; OH Logs</div>' +
-    '<div class="log-drawer" id="logs-' + p.id + '"></div>' +
-    '<span class="card-cta">Open prototypes &rarr;</span>';
+    '</div>';
   return card;
 }
 
 function renderGrid() {
   const grid = document.getElementById('projectGrid');
   grid.innerHTML = '';
-  state.projects.forEach(function(p) { grid.appendChild(renderCard(p)); });
+  state.projects.forEach(p => grid.appendChild(renderCard(p)));
 }
 
-// --- Toggle Active ---
 async function toggleActive(id) {
   const current = state.active[id] !== false;
   try {
-    await fetch(API + '/projects/' + id, {
+    await apiFetch('/projects/' + id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active: !current })
@@ -362,273 +312,282 @@ async function toggleActive(id) {
     state.active[id] = !current;
     renderGrid();
     toast(id + (!current ? ' activated' : ' deactivated'));
-  } catch (e) {
-    toast('Failed to toggle ' + id, true);
-  }
+  } catch (e) { toast('Failed to toggle ' + id, true); }
 }
 
-// --- Log Drawer ---
-async function toggleLogs(id) {
-  const drawer = document.getElementById('logs-' + id);
-  if (drawer.classList.contains('open')) {
-    drawer.classList.remove('open');
-    return;
-  }
-  drawer.classList.add('open');
-
-  var cached = state.logCache[id];
-  if (cached && Date.now() - cached.ts < 60000) {
-    drawer.innerHTML = cached.html;
-    return;
-  }
-
-  drawer.innerHTML = '<div class="log-loading pulse">Loading logs...</div>';
-  try {
-    var logs = await apiFetch('/projects/' + id + '/oh-logs?limit=5');
-    if (!logs.length) {
-      drawer.innerHTML = '<div class="log-loading">No logs yet</div>';
-      state.logCache[id] = { ts: Date.now(), html: drawer.innerHTML };
-      return;
-    }
-    var html = '';
-    logs.forEach(function(log) {
-      var badge = (log.status || 'unknown').toUpperCase();
-      var badgeClass = badge === 'DONE' ? 'done' : badge === 'FAIL' ? 'fail' : 'start';
-      var issueUrl = 'https://github.com/serter2069/' + id + '/issues/' + log.issueNumber;
-      var links = '';
-      if (log.prUrl) links += '<a href="' + log.prUrl + '" target="_blank">PR</a>';
-      if (log.logFile) links += '<a href="' + API + '/projects/' + id + '/oh-logs/' + log.logFile + '/raw" target="_blank">view log</a>';
-      html +=
-        '<div class="log-entry">' +
-          '<span class="log-ts">' + fmtTime(log.ts) + '</span>' +
-          '<span class="log-badge ' + badgeClass + '">' + badge + '</span>' +
-          '<a href="' + issueUrl + '" target="_blank">#' + log.issueNumber + '</a> ' +
-          (log.command !== 'unknown' ? log.command : '') +
-          (links ? '<div class="log-links">' + links + '</div>' : '') +
-        '</div>';
-    });
-    drawer.innerHTML = html;
-    state.logCache[id] = { ts: Date.now(), html: html };
-  } catch (e) {
-    drawer.innerHTML = '<div class="log-loading">Error loading logs</div>';
-  }
-}
-
-// --- Edit Stat ---
 function editStat(projectId, command, currentValue, blockEl) {
-  var numEl = blockEl.querySelector('.stat-num');
+  const numEl = blockEl.querySelector('.stat-num');
   if (!numEl) return;
-
-  var input = document.createElement('input');
-  input.type = 'number';
-  input.min = '0';
-  input.max = '999';
-  input.value = currentValue;
-  input.className = 'stat-edit-input';
-
+  const input = document.createElement('input');
+  input.type = 'number'; input.min = '0'; input.max = '999';
+  input.value = currentValue; input.className = 'stat-edit-input';
   numEl.replaceWith(input);
-  input.focus();
-  input.select();
+  input.focus(); input.select();
 
   function save() {
-    var val = parseInt(input.value);
+    let val = parseInt(input.value);
     if (isNaN(val) || val < 0) val = 0;
     if (val > 999) val = 999;
-    fetch(API + '/runs/set', {
+    apiFetch('/runs/set', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId: projectId, command: command, count: val })
-    }).then(function(res) {
-      if (!res.ok) throw new Error('Failed');
-      return res.json();
-    }).then(function(data) {
+      body: JSON.stringify({ projectId, command, count: val })
+    }).then(data => {
       if (!state.runs[projectId]) state.runs[projectId] = {};
       state.runs[projectId][command] = data.count;
       renderGrid();
       toast(command + ' → ' + data.count + ' (' + projectId + ')');
-    }).catch(function() {
-      toast('Failed to update ' + command, true);
-      renderGrid();
-    });
+    }).catch(() => { toast('Failed to update ' + command, true); renderGrid(); });
   }
 
-  input.addEventListener('keydown', function(e) {
+  input.addEventListener('keydown', e => {
     e.stopPropagation();
     if (e.key === 'Enter') { e.preventDefault(); save(); }
     if (e.key === 'Escape') { e.preventDefault(); renderGrid(); }
   });
   input.addEventListener('blur', save);
-  input.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); });
+  input.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
 }
 
-// --- Tabs ---
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelector('.tab-btn[onclick*="' + tab + '"]').classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'docs' && !docsState.loaded) loadDocs();
+  if (tab === 'instructions' && !icState.loaded) loadInstructions();
+  if (tab === 'openhands' && !ohState.loaded) { ohState.loaded = true; loadOpenHands(); setInterval(loadOpenHands, 30000); }
 }
 
-// --- Docs ---
-var docsState = { docs: [], loaded: false, selected: null, editing: false };
+// ── Instructions & Commands ───────────────────────────────────────────────────
 
-async function loadDocs() {
+const icState = {
+  loaded: false,
+  docs: [], cmds: [],
+  selectedType: null, selectedName: null,
+  editing: false
+};
+
+async function loadInstructions() {
+  icState.loaded = true;
   try {
-    var data = await apiFetch('/docs');
-    docsState.docs = data.sort(function(a, b) { return a.name.localeCompare(b.name); });
-    docsState.loaded = true;
+    const [docs, cmds] = await Promise.all([
+      apiFetch('/docs'),
+      fetch('/api/commands').then(r => r.ok ? r.json() : []).catch(() => [])
+    ]);
+    icState.docs = docs.sort((a, b) => a.name.localeCompare(b.name));
+    icState.cmds = cmds.sort((a, b) => a.name.localeCompare(b.name));
     renderDocsList();
+    renderCmdsList();
   } catch (e) {
-    document.getElementById('docsList').innerHTML = '<div class="doc-empty">Error loading docs</div>';
+    document.getElementById('docsList').innerHTML = '<div class="detail-empty">Error loading</div>';
   }
 }
 
 function filterDocs() { renderDocsList(); }
+function filterCmds() { renderCmdsList(); }
 
 function renderDocsList() {
-  var q = (document.getElementById('docsSearch').value || '').toLowerCase();
-  var list = docsState.docs.filter(function(d) {
-    return d.name.toLowerCase().includes(q) || (d.description || '').toLowerCase().includes(q);
-  });
-  if (list.length === 0) {
-    document.getElementById('docsList').innerHTML = '<div class="doc-empty">' + (docsState.docs.length === 0 ? 'No docs yet' : 'No matching docs') + '</div>';
+  const q = (document.getElementById('docsSearch').value || '').toLowerCase();
+  const list = icState.docs.filter(d =>
+    d.name.toLowerCase().includes(q) || (d.description || '').toLowerCase().includes(q)
+  );
+  if (!list.length) {
+    document.getElementById('docsList').innerHTML = '<div class="detail-empty" style="padding:20px;font-size:13px">' + (icState.docs.length === 0 ? 'No instructions yet' : 'No matches') + '</div>';
     return;
   }
-  var html = '';
-  list.forEach(function(d) {
-    var sel = docsState.selected === d.name ? ' selected' : '';
-    var date = d.updated_at ? new Date(d.updated_at).toLocaleString() : '---';
-    html += '<div class="doc-item' + sel + '" onclick="selectDoc(\'' + esc(d.name).replace(/'/g, "\\'") + '\')">' +
-      '<div class="doc-item-name">' + esc(d.name) + '</div>' +
-      (d.description ? '<div class="doc-item-desc">' + esc(d.description) + '</div>' : '') +
-      '<div class="doc-item-date">' + date + '</div>' +
+  document.getElementById('docsList').innerHTML = list.map(d => {
+    const sel = (icState.selectedType === 'doc' && icState.selectedName === d.name) ? ' selected' : '';
+    const date = d.updated_at ? new Date(d.updated_at).toLocaleDateString() : '';
+    return '<div class="item-card' + sel + '" onclick="selectDoc(\'' + esc(d.name).replace(/'/g, "\\'") + '\')">' +
+      '<div class="item-name">' + esc(d.name) + '</div>' +
+      (d.description ? '<div class="item-desc">' + esc(d.description) + '</div>' : '') +
+      (date ? '<div class="item-date">' + date + '</div>' : '') +
     '</div>';
-  });
-  document.getElementById('docsList').innerHTML = html;
+  }).join('');
+}
+
+function renderCmdsList() {
+  const q = (document.getElementById('cmdsSearch').value || '').toLowerCase();
+  const list = icState.cmds.filter(c =>
+    c.name.toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q)
+  );
+  if (!list.length) {
+    document.getElementById('cmdsList').innerHTML = '<div class="detail-empty" style="padding:20px;font-size:13px">' + (icState.cmds.length === 0 ? 'No commands yet' : 'No matches') + '</div>';
+    return;
+  }
+  document.getElementById('cmdsList').innerHTML = list.map(c => {
+    const sel = (icState.selectedType === 'cmd' && icState.selectedName === c.name) ? ' selected' : '';
+    const date = c.updated_at ? new Date(c.updated_at).toLocaleDateString() : '';
+    return '<div class="item-card' + sel + '" onclick="selectCmd(\'' + esc(c.name).replace(/'/g, "\\'") + '\')">' +
+      '<div class="item-name">/' + esc(c.name) + '</div>' +
+      (c.description ? '<div class="item-desc">' + esc(c.description) + '</div>' : '') +
+      (date ? '<div class="item-date">' + date + '</div>' : '') +
+    '</div>';
+  }).join('');
 }
 
 async function selectDoc(name) {
-  docsState.selected = name;
-  docsState.editing = false;
+  icState.selectedType = 'doc'; icState.selectedName = name; icState.editing = false;
   renderDocsList();
-  document.getElementById('docsDetail').innerHTML = '<div class="doc-empty pulse">Loading...</div>';
+  document.getElementById('detailPanel').innerHTML = '<div class="detail-panel"><div class="pulse" style="color:#aaa;font-size:13px">Loading...</div></div>';
   try {
-    var doc = await apiFetch('/docs/' + encodeURIComponent(name));
+    const doc = await apiFetch('/docs/' + encodeURIComponent(name));
     renderDocDetail(doc);
-  } catch (e) {
-    document.getElementById('docsDetail').innerHTML = '<div class="doc-empty">Error loading doc</div>';
-  }
+  } catch (e) { document.getElementById('detailPanel').innerHTML = '<div class="detail-panel"><div class="detail-empty">Error loading</div></div>'; }
 }
 
 function renderDocDetail(doc) {
-  var date = doc.updated_at ? new Date(doc.updated_at).toLocaleString() : '---';
-  document.getElementById('docsDetail').innerHTML =
-    '<div class="doc-view">' +
+  const date = doc.updated_at ? new Date(doc.updated_at).toLocaleString() : '';
+  document.getElementById('detailPanel').innerHTML =
+    '<div class="detail-panel">' +
       '<h2>' + esc(doc.name) + '</h2>' +
-      (doc.description ? '<div class="doc-view-desc">' + esc(doc.description) + '</div>' : '') +
-      '<div class="doc-view-date">Updated: ' + date + '</div>' +
-      '<div class="doc-actions">' +
-        '<button class="doc-btn doc-btn-edit" onclick="editDoc(\'' + esc(doc.name).replace(/'/g, "\\'") + '\')">Edit</button>' +
+      (doc.description ? '<div class="detail-desc">' + esc(doc.description) + '</div>' : '') +
+      (date ? '<div class="detail-date">Updated: ' + date + '</div>' : '') +
+      '<div class="detail-actions">' +
+        '<button class="btn btn-primary" onclick="editDocDetail(\'' + esc(doc.name).replace(/'/g, "\\'") + '\')">Edit</button>' +
       '</div>' +
-      '<div class="doc-content">' + esc(doc.content || '') + '</div>' +
+      '<div class="detail-content">' + esc(doc.content || '') + '</div>' +
     '</div>';
 }
 
-async function editDoc(name) {
-  var doc;
+async function editDocDetail(name) {
+  let doc;
   try { doc = await apiFetch('/docs/' + encodeURIComponent(name)); }
-  catch (e) { doc = { name: name, content: '', description: '' }; }
-  renderDocEditForm(doc);
+  catch (e) { doc = { name, content: '', description: '' }; }
+  renderEditForm({ type: 'doc', name: doc.name, description: doc.description || '', content: doc.content || '', isNew: false });
 }
 
 function newDoc() {
-  docsState.editing = true;
-  docsState.selected = null;
-  renderDocsList();
-  renderDocEditForm({ name: '', content: '', description: '' });
+  switchTab('instructions');
+  icState.selectedType = null; icState.selectedName = null;
+  renderEditForm({ type: 'doc', name: '', description: '', content: '', isNew: true });
 }
 
-function renderDocEditForm(doc) {
-  var isNew = !doc.name;
-  document.getElementById('docsDetail').innerHTML =
-    '<div class="doc-view">' +
-      '<div class="doc-edit-form">' +
-        '<label>Name' + (isNew ? '' : ' (read-only)') + '</label>' +
-        '<input type="text" id="docEditName" value="' + esc(doc.name || '').replace(/"/g, '&quot;') + '"' + (isNew ? '' : ' readonly style="background:#f3f4f6"') + '>' +
+async function selectCmd(name) {
+  icState.selectedType = 'cmd'; icState.selectedName = name; icState.editing = false;
+  renderCmdsList();
+  document.getElementById('detailPanel').innerHTML = '<div class="detail-panel"><div class="pulse" style="color:#aaa;font-size:13px">Loading...</div></div>';
+  try {
+    const res = await fetch('/api/commands/' + encodeURIComponent(name));
+    if (!res.ok) throw new Error(res.status);
+    const cmd = await res.json();
+    renderCmdDetail(cmd);
+  } catch (e) { document.getElementById('detailPanel').innerHTML = '<div class="detail-panel"><div class="detail-empty">Error loading</div></div>'; }
+}
+
+function renderCmdDetail(cmd) {
+  const date = cmd.updated_at ? new Date(cmd.updated_at).toLocaleString() : '';
+  document.getElementById('detailPanel').innerHTML =
+    '<div class="detail-panel">' +
+      '<h2>/' + esc(cmd.name) + '</h2>' +
+      (cmd.description ? '<div class="detail-desc">' + esc(cmd.description) + '</div>' : '') +
+      (date ? '<div class="detail-date">Updated: ' + date + '</div>' : '') +
+      '<div class="detail-actions">' +
+        '<button class="btn btn-primary" onclick="editCmdDetail(\'' + esc(cmd.name).replace(/'/g, "\\'") + '\')">Edit</button>' +
+      '</div>' +
+      '<div class="detail-content">' + esc(cmd.content || '') + '</div>' +
+    '</div>';
+}
+
+async function editCmdDetail(name) {
+  let cmd;
+  try {
+    const res = await fetch('/api/commands/' + encodeURIComponent(name));
+    cmd = await res.json();
+  } catch (e) { cmd = { name, content: '', description: '' }; }
+  renderEditForm({ type: 'cmd', name: cmd.name, description: cmd.description || '', content: cmd.content || '', isNew: false });
+}
+
+function newCmd() {
+  switchTab('instructions');
+  icState.selectedType = null; icState.selectedName = null;
+  renderEditForm({ type: 'cmd', name: '', description: '', content: '', isNew: true });
+}
+
+function renderEditForm({ type, name, description, content, isNew }) {
+  icState.editing = true;
+  const label = type === 'cmd' ? 'Command name (without /)' : 'Name';
+  document.getElementById('detailPanel').innerHTML =
+    '<div class="detail-panel">' +
+      '<div class="edit-form">' +
+        '<label>' + label + (isNew ? '' : ' (read-only)') + '</label>' +
+        '<input type="text" id="editName" value="' + esc(name).replace(/"/g, '&quot;') + '"' + (isNew ? '' : ' readonly style="background:#f3f4f6"') + '>' +
         '<label>Description</label>' +
-        '<input type="text" id="docEditDesc" value="' + esc(doc.description || '').replace(/"/g, '&quot;') + '" placeholder="Short description...">' +
+        '<input type="text" id="editDesc" value="' + esc(description).replace(/"/g, '&quot;') + '" placeholder="Short description...">' +
         '<label>Content</label>' +
-        '<textarea id="docEditContent" placeholder="Document content (markdown)...">' + esc(doc.content || '') + '</textarea>' +
-        '<div class="doc-actions">' +
-          '<button class="doc-btn doc-btn-save" onclick="saveDoc()">Save</button>' +
-          '<button class="doc-btn doc-btn-cancel" onclick="cancelDocEdit()">Cancel</button>' +
+        '<textarea id="editContent">' + esc(content) + '</textarea>' +
+        '<div class="detail-actions">' +
+          '<button class="btn btn-save" onclick="saveItem(\'' + type + '\',' + isNew + ')">Save</button>' +
+          '<button class="btn btn-cancel" onclick="cancelEdit(\'' + type + '\',\'' + esc(name).replace(/'/g, "\\'") + '\')">Cancel</button>' +
         '</div>' +
       '</div>' +
     '</div>';
 }
 
-async function saveDoc() {
-  var name = document.getElementById('docEditName').value.trim();
-  var desc = document.getElementById('docEditDesc').value.trim();
-  var content = document.getElementById('docEditContent').value;
+async function saveItem(type, isNew) {
+  const name = document.getElementById('editName').value.trim();
+  const desc = document.getElementById('editDesc').value.trim();
+  const content = document.getElementById('editContent').value;
   if (!name) { toast('Name is required', true); return; }
+
   try {
-    await fetch(API + '/docs/' + encodeURIComponent(name), {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: content, description: desc })
-    }).then(function(r) { if (!r.ok) throw new Error('Failed'); return r.json(); });
-    toast('Doc saved: ' + name);
-    docsState.selected = name;
-    docsState.editing = false;
-    docsState.loaded = false;
-    await loadDocs();
-    selectDoc(name);
-  } catch (e) {
-    toast('Failed to save doc', true);
+    if (type === 'doc') {
+      await fetch(API + '/docs/' + encodeURIComponent(name), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, description: desc })
+      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); });
+    } else {
+      await fetch('/api/commands/' + encodeURIComponent(name), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, description: desc })
+      }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); });
+    }
+    toast('Saved: ' + name);
+    icState.loaded = false;
+    await loadInstructions();
+    if (type === 'doc') selectDoc(name);
+    else selectCmd(name);
+  } catch (e) { toast('Failed to save', true); }
+}
+
+async function cancelEdit(type, name) {
+  icState.editing = false;
+  if (name) {
+    if (type === 'doc') await selectDoc(name);
+    else await selectCmd(name);
+  } else {
+    document.getElementById('detailPanel').innerHTML = '';
   }
 }
 
-function cancelDocEdit() {
-  docsState.editing = false;
-  if (docsState.selected) { selectDoc(docsState.selected); }
-  else { document.getElementById('docsDetail').innerHTML = '<div class="doc-empty">Select a doc from the list</div>'; }
-}
+// ── Init ──────────────────────────────────────────────────────────────────────
 
-function esc(str) {
-  var d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
-// --- Init ---
 async function init() {
-  // Load projects from DB
   try {
-    var projects = await apiFetch('/projects');
+    const projects = await apiFetch('/projects');
     state.projects = projects;
-    // Seed active state from DB
-    projects.forEach(function(p) { state.active[p.id] = p.active; });
-  } catch (e) {
-    state.projects = [];
-  }
+    projects.forEach(p => { state.active[p.id] = p.active; });
+  } catch (e) { state.projects = []; }
 
   renderGrid();
-  loadCron();
 
-  apiFetch('/runs/counts').then(function(data) {
+  apiFetch('/runs/counts').then(data => {
     state.runs = data;
     renderGrid();
-  }).catch(function() {});
+  }).catch(() => {});
 }
 
-// --- OpenHands Dashboard ---
-var ohState = { loaded: false, logVisible: false };
+// ── OpenHands ─────────────────────────────────────────────────────────────────
+
+const ohState = { loaded: false, logVisible: false };
 
 function ohAge(ts) {
   if (!ts) return '';
-  var diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
   if (diff < 60) return diff + 's ago';
   if (diff < 3600) return Math.floor(diff/60) + 'm ago';
   if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
@@ -636,90 +595,59 @@ function ohAge(ts) {
 }
 
 function renderOhIssues(containerId, items, emptyMsg) {
-  var el = document.getElementById(containerId);
-  if (!items || items.length === 0) {
-    el.innerHTML = '<div class="oh-empty">' + emptyMsg + '</div>';
-    return;
-  }
-  var html = '';
-  items.slice(0, 20).forEach(function(i) {
-    html += '<div class="oh-issue">' +
+  const el = document.getElementById(containerId);
+  if (!items || !items.length) { el.innerHTML = '<div class="oh-empty">' + emptyMsg + '</div>'; return; }
+  el.innerHTML = items.slice(0, 20).map(i =>
+    '<div class="oh-issue">' +
       '<span class="oh-issue-repo">' + esc(i.repoShort || '') + '</span>' +
       '<span class="oh-issue-num">#' + i.id + '</span>' +
       '<span class="oh-issue-title"><a href="' + esc(i.url) + '" target="_blank">' + esc(i.title) + '</a></span>' +
       '<span class="oh-issue-age">' + ohAge(i.updated_at) + '</span>' +
-    '</div>';
-  });
-  el.innerHTML = html;
+    '</div>'
+  ).join('');
 }
 
 async function loadOpenHands() {
   document.getElementById('ohLastRefresh').textContent = 'Refreshing...';
   try {
-    var data = await apiFetch('/openhands/issues');
-    var queue = data['oh:ready'] || [];
-    var running = data['oh:progress'] || [];
-    var done = data['oh:done'] || [];
-    var failed = (data['oh:failed'] || []).concat(data['oh:abandoned'] || []);
-
+    const data = await apiFetch('/openhands/issues');
+    const queue = data['oh:ready'] || [], running = data['oh:progress'] || [];
+    const done = data['oh:done'] || [], failed = (data['oh:failed'] || []).concat(data['oh:abandoned'] || []);
     document.getElementById('ohCountQueue').textContent = queue.length;
     document.getElementById('ohCountRunning').textContent = running.length;
     document.getElementById('ohCountDone').textContent = done.length;
     document.getElementById('ohCountFailed').textContent = failed.length;
-
     renderOhIssues('ohQueue', queue, 'No issues in queue');
     renderOhIssues('ohRunning', running, 'Nothing running right now');
     renderOhIssues('ohDone', done.slice(0, 10), 'No recent completed tasks');
     renderOhIssues('ohFailed', failed.slice(0, 10), 'No failed tasks');
     document.getElementById('ohLastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
-  } catch (e) {
-    document.getElementById('ohLastRefresh').textContent = 'Error loading data';
-  }
+  } catch (e) { document.getElementById('ohLastRefresh').textContent = 'Error'; }
   try {
-    var cnt = await apiFetch('/openhands/containers');
+    const cnt = await apiFetch('/openhands/containers');
     document.getElementById('ohContainers').textContent = cnt.count + '/25 containers';
-  } catch (e) {
-    document.getElementById('ohContainers').textContent = '';
-  }
+  } catch (e) {}
   if (ohState.logVisible) loadOhLog();
 }
 
 async function loadOhLog() {
-  var el = document.getElementById('ohLog');
+  const el = document.getElementById('ohLog');
   try {
-    var data = await apiFetch('/openhands/log');
-    var lines = data.lines || [];
-    if (lines.length === 0) {
-      el.innerHTML = '<div class="oh-log-line" style="color:#666">Log is empty</div>';
-      return;
-    }
-    var html = '';
-    lines.forEach(function(line) {
-      var cls = line.includes('DONE:') ? 'done' : line.includes('FAIL:') ? 'fail' : line.includes('START:') ? 'start' : '';
-      html += '<div class="oh-log-line' + (cls ? ' ' + cls : '') + '">' + esc(line) + '</div>';
-    });
-    el.innerHTML = html;
-  } catch (e) {
-    el.innerHTML = '<div class="oh-log-line" style="color:#666">Error loading log</div>';
-  }
+    const data = await apiFetch('/openhands/log');
+    const lines = data.lines || [];
+    if (!lines.length) { el.innerHTML = '<div class="oh-log-line" style="color:#666">Log is empty</div>'; return; }
+    el.innerHTML = lines.map(line => {
+      const cls = line.includes('DONE:') ? 'done' : line.includes('FAIL:') ? 'fail' : line.includes('START:') ? 'start' : '';
+      return '<div class="oh-log-line' + (cls ? ' ' + cls : '') + '">' + esc(line) + '</div>';
+    }).join('');
+  } catch (e) { el.innerHTML = '<div class="oh-log-line" style="color:#666">Error loading log</div>'; }
 }
 
 function toggleOhLog() {
-  var el = document.getElementById('ohLog');
   ohState.logVisible = !ohState.logVisible;
-  el.style.display = ohState.logVisible ? 'block' : 'none';
+  document.getElementById('ohLog').style.display = ohState.logVisible ? 'block' : 'none';
   if (ohState.logVisible) loadOhLog();
 }
-
-var _origSwitchTab = switchTab;
-switchTab = function(tab) {
-  _origSwitchTab(tab);
-  if (tab === 'openhands' && !ohState.loaded) {
-    ohState.loaded = true;
-    loadOpenHands();
-    setInterval(loadOpenHands, 30000);
-  }
-};
 
 init();
 </script>

@@ -775,6 +775,19 @@ const STAGE_COMMANDS = {
   testing: ['dotest'],
   done: [],
 };
+const DEFAULT_TARGETS = { sa: 10, proto: 10, cicd: 1, audit: 10, dotest: 10 };
+
+// Auto-create default cycle targets for a project if none exist
+async function ensureDefaultCycles(projectId) {
+  const { rows } = await pool.query("SELECT command FROM sdlc_cycles WHERE project_id=$1", [projectId]);
+  if (rows.length > 0) return; // already configured
+  for (const [cmd, target] of Object.entries(DEFAULT_TARGETS)) {
+    await pool.query(
+      "INSERT INTO sdlc_cycles (project_id, command, target) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+      [projectId, cmd, target]
+    );
+  }
+}
 
 // GET /api/projects/:id/stages — full SDLC status
 app.get("/api/projects/:id/stages", async (req, res) => {
@@ -788,6 +801,9 @@ app.get("/api/projects/:id/stages", async (req, res) => {
 
     const currentStage = project.stage || 'sa';
     const currentIndex = SDLC_STAGES.indexOf(currentStage);
+
+    // Auto-create default cycle targets if none exist
+    await ensureDefaultCycles(id);
 
     // Get run counts
     const { rows: runRows } = await pool.query(

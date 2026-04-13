@@ -87,7 +87,7 @@ async function initTables() {
     )
   `);
   await pool.query(`
-    INSERT INTO proto_projects (id) VALUES ('p2ptax'),('daterabbit'),('dressit'),('avito-georgia'),('chesstourism'),('gun'),('motosocial'),('reference')
+    INSERT INTO proto_projects (id) VALUES ('p2ptax'),('daterabbit'),('dressit'),('avito-georgia'),('chesstourism'),('gun'),('reference')
     ON CONFLICT DO NOTHING
   `);
 
@@ -248,8 +248,9 @@ app.get("/api/runs/needs-work", async (req, res) => {
     counts[row.project_id][row.command] = parseInt(row.count);
   }
 
+  const { rows: projectRows } = await pool.query("SELECT id FROM proto_projects ORDER BY id");
   const projects = [...new Set([
-    "p2ptax", "avito-georgia", "chesstourism", "daterabbit", "dressit", "gun",
+    ...projectRows.map(r => r.id),
     ...Object.keys(counts)
   ])];
 
@@ -682,6 +683,37 @@ app.get("/api/projects/:id/oh-logs/:filename/raw", (req, res) => {
 });
 
 // ─── PROJECT MANAGEMENT ──────────────────────────────────────────────────────
+
+// GET /api/projects — list all projects from DB
+app.get("/api/projects", async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT pp.id, pp.active, pp.updated_at,
+        (SELECT COUNT(*) FROM pages WHERE project_id = pp.id) as page_count,
+        (SELECT COUNT(*) FROM stories WHERE project_id = pp.id) as story_count
+      FROM proto_projects pp
+      ORDER BY pp.id
+    `);
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/projects/:id — remove project and all its data
+app.delete("/api/projects/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM stories WHERE project_id=$1", [id]);
+    await pool.query("DELETE FROM pages WHERE project_id=$1", [id]);
+    await pool.query("DELETE FROM proto_files WHERE project_id=$1", [id]);
+    await pool.query("DELETE FROM proto_runs WHERE project_id=$1", [id]);
+    await pool.query("DELETE FROM proto_projects WHERE id=$1", [id]);
+    res.json({ ok: true, deleted: id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // PATCH /api/projects/:id — update project active status
 app.patch("/api/projects/:id", async (req, res) => {

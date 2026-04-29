@@ -4,6 +4,8 @@ const fs = require("fs");
 const path = require("path");
 const { execSync, spawn } = require("child_process");
 const docsStore = require("./docs-store");
+const commandsStore = require("./commands-store");
+const guidesStore = require("./guides-store");
 
 const app = express();
 app.use(express.json());
@@ -1303,6 +1305,68 @@ app.put("/api/docs/:name", (req, res) => {
   }
   const doc = docsStore.upsert(req.params.name, { content, description });
   res.json({ name: req.params.name, ...doc });
+});
+
+// ─── COMMANDS REGISTRY ────────────────────────────────────────────────────────
+
+// List all commands (names + descriptions, no content)
+app.get("/api/commands", (req, res) => {
+  res.json(commandsStore.list());
+});
+
+// Export full dump (all commands with content)
+app.get("/api/commands/export", (req, res) => {
+  const data = commandsStore.list().map(c => ({ ...c, ...commandsStore.get(c.name) }));
+  res.setHeader("Content-Disposition", 'attachment; filename="commands-backup.json"');
+  res.json(data);
+});
+
+// Get single command (full content)
+app.get("/api/commands/:name", (req, res) => {
+  const cmd = commandsStore.get(req.params.name);
+  if (!cmd) return res.status(404).json({ error: "Command not found" });
+  res.json({ name: req.params.name, ...cmd });
+});
+
+// Create or update a command
+app.put("/api/commands/:name", (req, res) => {
+  const { content, description } = req.body || {};
+  if (typeof content === "undefined" && typeof description === "undefined") {
+    return res.status(400).json({ error: "Missing body: content or description required" });
+  }
+  const cmd = commandsStore.upsert(req.params.name, { content, description });
+  res.json({ name: req.params.name, ...cmd });
+});
+
+// ─── GUIDES REGISTRY ──────────────────────────────────────────────────────────
+
+// List all guides (names + descriptions, no content)
+app.get("/api/guides", (req, res) => {
+  res.json(guidesStore.list());
+});
+
+// Export full dump (all guides with content)
+app.get("/api/guides/export", (req, res) => {
+  const data = guidesStore.list().map(g => ({ ...g, ...guidesStore.get(g.name) }));
+  res.setHeader("Content-Disposition", 'attachment; filename="guides-backup.json"');
+  res.json(data);
+});
+
+// Get single guide (full content)
+app.get("/api/guides/:name", (req, res) => {
+  const guide = guidesStore.get(req.params.name);
+  if (!guide) return res.status(404).json({ error: "Guide not found" });
+  res.json({ name: req.params.name, ...guide });
+});
+
+// Create or update a guide
+app.put("/api/guides/:name", (req, res) => {
+  const { content, description } = req.body || {};
+  if (typeof content === "undefined" && typeof description === "undefined") {
+    return res.status(400).json({ error: "Missing body: content or description required" });
+  }
+  const guide = guidesStore.upsert(req.params.name, { content, description });
+  res.json({ name: req.params.name, ...guide });
 });
 
 // ─── PROTO FILES ─────────────────────────────────────────────────────────────

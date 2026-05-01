@@ -22,21 +22,28 @@ jobs:
             curl -sL -H "Authorization: token ${GITHUB_TOKEN}" \
               "https://api.github.com/repos/serter2069/proto-hub/tarball/${COMMIT_SHA}" | tar xz --strip-components=1
 
-            # Deploy hub-api (Express + PostgreSQL)
-            cp hub-api/server.js /var/www/proto-hub-api/server.js
-            cp hub-api/docs-store.js /var/www/proto-hub-api/docs-store.js 2>/dev/null || true
+            # Deploy hub-api (Express + PostgreSQL).
+            # PM2 process `proto-hub-api` runs from /var/www/proto/hub-api/server.js
+            # (see `pm2 show proto-hub-api`). The previous /var/www/proto-hub-api/
+            # path was a phantom — files copied there were never served.
+            HUB_API_DIR=/var/www/proto/hub-api
+            mkdir -p "$HUB_API_DIR"
+            cp hub-api/server.js "$HUB_API_DIR/server.js"
+            cp hub-api/docs-store.js "$HUB_API_DIR/docs-store.js" 2>/dev/null || true
+            cp hub-api/commands-store.js "$HUB_API_DIR/commands-store.js" 2>/dev/null || true
+            cp hub-api/guides-store.js "$HUB_API_DIR/guides-store.js" 2>/dev/null || true
 
             # Deploy hub UI (static index.html)
             cp hub/index.html /var/www/proto/index.html
 
             # Deploy oh-orchestrator
-            cp oh-orchestrator.sh /var/www/proto-hub-api/oh-orchestrator.sh
-            chmod +x /var/www/proto-hub-api/oh-orchestrator.sh
+            cp oh-orchestrator.sh "$HUB_API_DIR/oh-orchestrator.sh"
+            chmod +x "$HUB_API_DIR/oh-orchestrator.sh"
 
             # Install deps if package.json changed
             if [ -f hub-api/package.json ]; then
-              cp hub-api/package.json /var/www/proto-hub-api/package.json
-              cd /var/www/proto-hub-api && npm install --omit=dev 2>/dev/null || true
+              cp hub-api/package.json "$HUB_API_DIR/package.json"
+              cd "$HUB_API_DIR" && npm install --omit=dev 2>/dev/null || true
             fi
 
             # Cleanup

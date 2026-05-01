@@ -103,6 +103,46 @@ async function initTables() {
   await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS name TEXT`);
   await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS url TEXT`);
 
+  // Project config registry — migrated from ~/.claude/projects.yaml (issue #34).
+  // Hot columns (frequently queried by ~/bin scripts) live as real columns,
+  // everything else (notes/subagents/llm_*/server_path/pm2_name_*/etc) goes to `config` jsonb.
+  const configCols = [
+    'path TEXT',
+    'path_frontend TEXT',
+    'path_backend TEXT',
+    'port_frontend INTEGER',
+    'port_backend INTEGER',
+    'port_metromap INTEGER',
+    'port_web INTEGER',
+    'dev_branch TEXT',
+    'prod_branch TEXT',
+    'github_repo TEXT',
+    'doppler_project TEXT',
+    'staging TEXT',
+    'prod TEXT',
+    'pm2_name TEXT',
+    'server TEXT',
+    'server_path TEXT',
+    'engine TEXT',
+    'model TEXT',
+    'priority TEXT',
+    'project_type TEXT',
+    'task_backend TEXT',
+    'auto_approve BOOLEAN DEFAULT false',
+    'detect_names TEXT[]',
+    'detect_paths TEXT[]',
+    'config JSONB DEFAULT \'{}\'::jsonb',
+  ];
+  for (const col of configCols) {
+    const colName = col.split(' ')[0];
+    await pool.query(`ALTER TABLE proto_projects ADD COLUMN IF NOT EXISTS ${col}`).catch(e => {
+      console.warn(`column ${colName} add skipped:`, e.message);
+    });
+  }
+  // Index for detect lookup (GIN on text[]).
+  await pool.query(`CREATE INDEX IF NOT EXISTS proto_projects_detect_names_idx ON proto_projects USING GIN (detect_names)`).catch(() => {});
+  await pool.query(`CREATE INDEX IF NOT EXISTS proto_projects_detect_paths_idx ON proto_projects USING GIN (detect_paths)`).catch(() => {});
+
   // SDLC cycle targets per command
   await pool.query(`
     CREATE TABLE IF NOT EXISTS sdlc_cycles (
@@ -733,17 +773,70 @@ app.get("/api/projects/:id/oh-logs/:filename/raw", (req, res) => {
 
 // ─── PROJECT MANAGEMENT ──────────────────────────────────────────────────────
 
-// GET /api/projects — list all projects from DB
+// GET /api/projects — list all projects from DB.
+// Query params:
+//   ?active=true         — only active projects
+//   ?detect=<str>        — find projects whose detect_names or detect_paths contain <str>
+//                          (used by minime/twin auto-detect-by-pwd or name).
+//                          When detect is given, response is the same list shape
+//                          filtered to matches (usually 0 or 1 row).
 app.get("/api/projects", async (req, res) => {
   try {
+    const { active, detect } = req.query;
+    const where = [];
+    const vals = [];
+    let idx = 1;
+    if (active === "true") { where.push(`pp.active = true`); }
+    if (active === "false") { where.push(`pp.active = false`); }
+    if (detect) {
+      // Match if any element of detect_names OR detect_paths is a substring of detect,
+      // OR detect string is a substring of any element. Tolerant for paths like
+      // "/Users/sergei/Documents/Projects/Ruslan/p2ptax".
+      where.push(`(
+        EXISTS (SELECT 1 FROM unnest(COALESCE(pp.detect_names, ARRAY[]::TEXT[])) n WHERE position(n in $${idx}) > 0)
+        OR EXISTS (SELECT 1 FROM unnest(COALESCE(pp.detect_paths, ARRAY[]::TEXT[])) n WHERE position(n in $${idx}) > 0)
+        OR pp.id = $${idx}
+        OR LOWER(pp.name) = LOWER($${idx})
+      )`);
+      vals.push(detect);
+      idx++;
+    }
+    const whereSQL = where.length ? `WHERE ${where.join(" AND ")}` : "";
     const { rows } = await pool.query(`
       SELECT pp.id, pp.active, pp.name, pp.url, pp.updated_at,
+        pp.path, pp.port_frontend, pp.port_backend, pp.dev_branch, pp.prod_branch,
+        pp.github_repo, pp.doppler_project, pp.staging, pp.prod, pp.pm2_name,
+        pp.priority, pp.project_type, pp.engine, pp.model, pp.task_backend,
         (SELECT COUNT(*) FROM pages WHERE project_id = pp.id) as page_count,
         (SELECT COUNT(*) FROM stories WHERE project_id = pp.id) as story_count
       FROM proto_projects pp
+      ${whereSQL}
       ORDER BY pp.id
-    `);
+    `, vals);
     res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/projects/:id — full project record (all hot columns + config jsonb merged).
+// id matching is case-insensitive and accepts both `id` and `name` for convenience
+// (so `proto config DateRabbit` works the same as `proto config date-rabbit`).
+app.get("/api/projects/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query(
+      `SELECT * FROM proto_projects WHERE id = $1 OR LOWER(name) = LOWER($1) LIMIT 1`,
+      [id]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Project not found" });
+    const row = rows[0];
+    // Merge config jsonb into the top-level response so callers see one flat object.
+    // Real columns win over jsonb keys with the same name (defensive).
+    const cfg = row.config || {};
+    const merged = { ...cfg, ...row };
+    delete merged.config;
+    res.json(merged);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -855,19 +948,48 @@ app.post("/api/projects", async (req, res) => {
   }
 });
 
-// PATCH /api/projects/:id — update project
+// Hot column whitelist for project config — any field NOT in here goes into `config` jsonb.
+// Keep this in sync with the ALTER TABLE block in initTables().
+const PROJECT_HOT_COLUMNS = new Set([
+  'active', 'name', 'url', 'sa_schema_id', 'stage', 'paused',
+  'path', 'path_frontend', 'path_backend',
+  'port_frontend', 'port_backend', 'port_metromap', 'port_web',
+  'dev_branch', 'prod_branch', 'github_repo', 'doppler_project',
+  'staging', 'prod', 'pm2_name', 'server', 'server_path',
+  'engine', 'model', 'priority', 'project_type', 'task_backend',
+  'auto_approve', 'detect_names', 'detect_paths',
+]);
+
+// PATCH /api/projects/:id — partial update.
+// Hot fields → real columns. Anything else → merged into `config` jsonb.
+// Upserts (creates row if missing) so CLI `proto config <new> set ...` works.
 app.patch("/api/projects/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { active, name, url } = req.body;
+    const body = req.body || {};
 
-    const sets = ['updated_at = NOW()'];
+    const hotSets = ['updated_at = NOW()'];
     const vals = [];
     let idx = 1;
+    const configPatch = {};
 
-    if (typeof active === "boolean") { sets.push(`active = $${idx}`); vals.push(active); idx++; }
-    if (name !== undefined) { sets.push(`name = $${idx}`); vals.push(name); idx++; }
-    if (url !== undefined) { sets.push(`url = $${idx}`); vals.push(url); idx++; }
+    for (const [k, v] of Object.entries(body)) {
+      if (k === 'id' || k === 'updated_at' || k === 'page_count' || k === 'story_count') continue;
+      if (PROJECT_HOT_COLUMNS.has(k)) {
+        hotSets.push(`${k} = $${idx}`);
+        vals.push(v);
+        idx++;
+      } else {
+        configPatch[k] = v;
+      }
+    }
+
+    // Merge configPatch into existing config jsonb.
+    if (Object.keys(configPatch).length > 0) {
+      hotSets.push(`config = COALESCE(config, '{}'::jsonb) || $${idx}::jsonb`);
+      vals.push(JSON.stringify(configPatch));
+      idx++;
+    }
 
     if (vals.length === 0) {
       return res.status(400).json({ error: "No fields to update" });
@@ -876,11 +998,68 @@ app.patch("/api/projects/:id", async (req, res) => {
     vals.push(id);
     const { rows } = await pool.query(`
       INSERT INTO proto_projects (id, active, updated_at) VALUES ($${idx}, true, NOW())
-      ON CONFLICT (id) DO UPDATE SET ${sets.join(', ')}
+      ON CONFLICT (id) DO UPDATE SET ${hotSets.join(', ')}
       RETURNING *
     `, vals);
 
-    res.json(rows[0]);
+    const row = rows[0];
+    const cfg = row.config || {};
+    const merged = { ...cfg, ...row };
+    delete merged.config;
+    res.json(merged);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT /api/projects/:id — full replace.
+// Hot fields → real columns. Everything else → REPLACES `config` jsonb (not merge).
+// Use this when migrating yaml or fully redefining a project.
+app.put("/api/projects/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const body = req.body || {};
+
+    const colNames = ['id', 'updated_at'];
+    const placeholders = ['$1', 'NOW()'];
+    const vals = [id];
+    let idx = 2;
+
+    const configReplace = {};
+    for (const [k, v] of Object.entries(body)) {
+      if (k === 'id' || k === 'updated_at' || k === 'page_count' || k === 'story_count') continue;
+      if (PROJECT_HOT_COLUMNS.has(k)) {
+        colNames.push(k);
+        placeholders.push(`$${idx}`);
+        vals.push(v);
+        idx++;
+      } else {
+        configReplace[k] = v;
+      }
+    }
+
+    colNames.push('config');
+    placeholders.push(`$${idx}::jsonb`);
+    vals.push(JSON.stringify(configReplace));
+    idx++;
+
+    // ON CONFLICT DO UPDATE — set every provided column, leave others untouched.
+    const updateSets = colNames
+      .filter(c => c !== 'id')
+      .map(c => c === 'updated_at' ? `${c} = NOW()` : `${c} = EXCLUDED.${c}`);
+
+    const { rows } = await pool.query(`
+      INSERT INTO proto_projects (${colNames.join(', ')})
+      VALUES (${placeholders.join(', ')})
+      ON CONFLICT (id) DO UPDATE SET ${updateSets.join(', ')}
+      RETURNING *
+    `, vals);
+
+    const row = rows[0];
+    const cfg = row.config || {};
+    const merged = { ...cfg, ...row };
+    delete merged.config;
+    res.json(merged);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
